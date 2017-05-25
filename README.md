@@ -12,7 +12,7 @@ Or, download [the package](https://github.com/hapi-server/matlab-client/archive/
 
 ```hapi.m``` automatically downloads a required java library from `https://github.com/hapi-server/matlab-client/` if needed (for parsing JSON; authored by http://json.org/).
 
-```hapi.m``` automatically updates itself if a newer version is found in [https://github.com/hapi-server/matlab-client/](the repository).  See ```help hapi``` to turn of automatic updates.
+```hapi.m``` automatically updates itself if a newer version is found in [the repository](https://github.com/hapi-server/matlab-client/).  See ```help hapi``` to turn of automatic updates.
 
 ## Examples
 
