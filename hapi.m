@@ -51,6 +51,7 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 % This is free and unencumbered software released into the public domain.
 % R.S Weigel <rweigel@gmu.edu>
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Default Options
 %
@@ -93,17 +94,18 @@ end
 % Get latest version of script
 if (DOPTS.update_script)
     % Not tested.
-    % http://www.mathworks.com/matlabcentral/fileexchange/55746-javamd5
+    % Based on http://www.mathworks.com/matlabcentral/fileexchange/55746-javamd5
     md = java.security.MessageDigest.getInstance('MD5');
     fid = fopen('hapi.m','r');
     digest = dec2hex(typecast(md.digest(fread(fid, inf, '*uint8')),'uint8'));
     fclose(fid);
     md5a = lower(reshape(digest',1,[]));
     str = urlread(DOPTS.scripturl);
-    digest = dec2hex(typecast(md.digest(str),'uint8'));
+    digest = dec2hex(typecast(md.digest(uint8(str)),'uint8'));
     md5b = lower(reshape(digest',1,[]));
     if (~strmatch(md5a,md5b))
         % Will this work?
+        if (DOPTS.logging) fprintf('Found newer version of hapi.m on server.  Using.\n');end
         fid = fopen('hapi.m','w');
         fprintf(fid,'%s',str);
         fclose(fid);
