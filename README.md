@@ -2,11 +2,13 @@
 
 ## Installation
 
-In MATLAB, execute
+In MATLAB, simply execute
 ```matlab
-urlwrite('https://github.com/hapi-server/matlab-client/hapi.m','hapi.m');
+urlwrite('https://github.com/hapi-server/matlab-client/hapi.m','hapi.m'); % D/L and save hapi.m
 help hapi
 ```
+
+Or, download https://github.com/hapi-server/matlab-client/archive/master.zip
 
 ```hapi.m``` automatically downloads a required java library automatically if needed.
 
@@ -19,7 +21,7 @@ Example usage is given in [https://github.com/hapi-server/matlab-client/hapi_dem
 To run examples, execute
 
 ```matlab
-urlwrite('https://github.com/hapi-server/matlab-client/hapi_demo.m','hapi_demo.m');
+urlwrite('https://github.com/hapi-server/matlab-client/hapi_demo.m','hapi_demo.m'); % D/L hapi_demo.m
 ```
 
 and then enter
