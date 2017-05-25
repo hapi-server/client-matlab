@@ -10,9 +10,9 @@ help hapi
 
 Or, download https://github.com/hapi-server/matlab-client/archive/master.zip
 
-```hapi.m``` automatically downloads a required java library automatically if needed.
+```hapi.m``` automatically downloads a required java library from `https://github.com/hapi-server/matlab-client/` if needed (for parsing JSON; authored by http://json.org/).
 
-```hapi.m``` automatically updates itself if a newer version is found in repository.  See ```help hapi``` to turn of automatic updates.
+```hapi.m``` automatically updates itself if a newer version is found in [https://github.com/hapi-server/matlab-client/](the repository).  See ```help hapi``` to turn of automatic updates.
 
 ## Examples
 
@@ -29,6 +29,15 @@ and then enter
 ```matlab
 hapi_demo
 ```
+
+## Development
+
+```bash
+git clone https://github.com/hapi-server/matlab-client.git
+```
+
+and set `OPTS.update_script = 0` in `hapi.m`.  Unset before committing changes.
+
 ## Contact
 
 Bob Weigel <rweigel@gmu.edu>
