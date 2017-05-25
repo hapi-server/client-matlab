@@ -8,7 +8,7 @@ urlwrite('https://github.com/hapi-server/matlab-client/hapi.m','hapi.m'); % D/L 
 help hapi
 ```
 
-Or, download https://github.com/hapi-server/matlab-client/archive/master.zip
+Or, download [the package](https://github.com/hapi-server/matlab-client/archive/master.zip).
 
 ```hapi.m``` automatically downloads a required java library from `https://github.com/hapi-server/matlab-client/` if needed (for parsing JSON; authored by http://json.org/).
 
@@ -16,7 +16,7 @@ Or, download https://github.com/hapi-server/matlab-client/archive/master.zip
 
 ## Examples
 
-Example usage is given in [https://github.com/hapi-server/matlab-client/hapi_demo.m](hapi_demo.m)
+Example usage is given in [hapi_demo.m](https://github.com/hapi-server/matlab-client/hapi_demo.m)
 
 To run examples, execute
 
