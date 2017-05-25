@@ -27,14 +27,17 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   Options are set by passing a structure as the last argument with fields
 %
 %       update_script (default true) - Use newer hapi.m if found.
-%       logging (default true) - Log to console.
+%       logging (default false) - Log to console.
 %       cache_files (default true) - Save files in hapi-data.
 %       use_cache (default true) - Use cache file if found.
 %       serverlist (default https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt)
 %   
-%   e.g., 
-%       OPTS = struct(); 
-%       OPTS.logging = 0;
+%   e.g., to reverse default options, use
+%       OPTS = struct();
+%       OPTS.updatescript = 0;
+%       OPTS.logging      = 1;
+%       OPTS.cache_files  = 0;
+%       OPTS.usecache     = 0;
 %       HAPI(...,OPTS)
 %
 %   This is a command-line only interface.  For a GUI for browsing catalogs
@@ -56,12 +59,13 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %
 % Implemented
 DOPTS = struct();
-DOPTS.update_script = 1;
-DOPTS.logging       = 1;
+DOPTS.update_script = 0;
+DOPTS.logging       = 0;
 DOPTS.cache_files   = 1; % Save data requested in file for off-line use.
 DOPTS.use_cache     = 1; % Use cached file associated with request if its exists.
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt';
-DOPTS.jsonlib       = 'https://github.com/hapi-server/matlab-client/blob/master/json-20140107.jar';
+DOPTS.jsonfname     = 'json-20140107.jar';
+DOPTS.jsonlib       = ['https://github.com/hapi-server/matlab-client/blob/master/',DOPTS.jsonfname];
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
 
 % TODO: These are not implemented.
@@ -73,17 +77,18 @@ DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-clie
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Extract options (better way to do this?)
 nin = nargin;
-if exist('SERVER','var') && isstruct(SERVER),OPTS = SERVER;clear SERVER;nin = nin-1;end
-if exist('DATASET','var') && isstruct(DATASET),OPTS = DATASET;clear DATASET;nin = nin-1;end
-if exist('PARAMETERS','var') && isstruct(PARAMETERS),OPTS = PARAMETERS;clear SERVER;nin = nin-1;end
+if exist('SERVER','var') && isstruct(SERVER),OPTS = SERVER;clear SERVER;end
+if exist('DATASET','var') && isstruct(DATASET),OPTS = DATASET;clear DATASET;;end
+if exist('PARAMETERS','var') && isstruct(PARAMETERS),OPTS = PARAMETERS;clear SERVER;end
 if exist('START','var') && isstruct(START),OPTS = START;clear SERVER;;end
 if exist('STOP','var') && isstruct(STOP),OPTS = STOP;clear SERVER;end
 
 if exist('OPTS')
     keys = fieldnames(OPTS);
+    nin = nin-1;
     if length(keys)
         for i = 1:length(keys)
-            setfield(DOPTS,keys{i},getfield(OPTS,keys{i}));
+            DOPTS = setfield(DOPTS,keys{i},getfield(OPTS,keys{i}));
         end
     end
 end
@@ -118,6 +123,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get java JSON library
 if ~exist('org.json.JSONArray')
+    if exist(jsonfname,'file')
+        if (DOPTS.logging) fprintf('Adding to Java class path: %s\n',which(DOPTS.jsonfname));end
+        javaaddpath(DOPTS.jsonfname);
+    end
     % Fetch library if not already there (will do once per MATLAB session).
     % Uses json.org Java library.  See also https://gist.github.com/mikofski/2492355
     if (DOPTS.logging) fprintf('Adding to Java class path: %s\n',DOPTS.jsonlib);end
@@ -238,6 +247,28 @@ end
 
 if (nin == 3 || nin == 5)
 
+    if (DOPTS.cache_files || DOPTS.use_cache)
+        urld = regexprep(SERVER,'http://(.*)','$1');
+        urld = ['hapi-data',filesep(),regexprep(urld,'/','_')];
+        fname = sprintf('%s_%s_%s_%s',...
+                        DATASET,...
+                        regexprep(PARAMETERS,',','-'),...
+                        regexprep(START,'-|:\.|Z',''),...
+                        regexprep(STOP,'-|:|\.|Z',''));
+
+        fname = [urld,filesep(),fname,'.csv'];
+    end
+
+    if (DOPTS.use_cache)
+        fnamem = regexprep(fname,'\.csv','.mat');
+        if exist(fnamem,'file');
+            if (DOPTS.logging) fprintf('Reading %s ... ',fnamem);end
+            load(fnamem);
+            if (DOPTS.logging) fprintf('Done.\n');end
+            return
+        end
+    end
+    
     url = [SERVER,'/info?id=',DATASET,'&parameters=',PARAMETERS];
 
     if (DOPTS.logging) fprintf('Reading %s ... ',url);end
@@ -288,26 +319,6 @@ if (nin == 3 || nin == 5)
 
     url = [SERVER,'/data?id=',DATASET,'&parameters=',PARAMETERS,'&time.min=',START,'&time.max=',STOP];
 
-    if (DOPTS.cache_files || DOPTS.use_cache)
-        urld = regexprep(SERVER,'http://(.*)','$1');
-        urld = ['hapi-data',filesep(),regexprep(urld,'/','_')];
-        fname = sprintf('%s_%s_%s_%s',...
-                        DATASET,...
-                        regexprep(PARAMETERS,',','-'),...
-                        regexprep(START,'-|:\.|Z',''),...
-                        regexprep(STOP,'-|:|\.|Z',''));
-
-        fname = [urld,filesep(),fname,'.csv'];
-    end
-
-    if (DOPTS.use_cache)
-        fnamem = regexprep(fname,'\.csv','.mat');
-        if exist(fnamem,'file');
-            load(fnamem);
-            return
-        end
-    end
-
     if (DOPTS.cache_files)
         if ~exist('hapi-data','dir')
             mkdir('hapi-data');
@@ -354,23 +365,52 @@ if (nin == 3 || nin == 5)
         error('Error when attempting to fetch %s\n',url);
     end
 
-    datas = strread(str,'%s','delimiter',sprintf('\n'));
-    if (DOPTS.logging) fprintf('Parsing %s ... ',fname);end
+    timelen = meta{1}.length;
+    if (timelen == 24)
+        % Faster read of data.  Replace, e.g., 2012-02-01T00:00:00.000Z
+        % with 2012,02,01,00,00,00,000 and then use str2num on string
+        % containing file contents.
+        % TODO: Write code for other time lengths.
+        % TODO: Check that no other variables are strings
+        if (DOPTS.logging) fprintf('Fast parsing %s ... ',fname);end
 
-    for i = 1:length(datas)
-        line = strsplit(datas{i},',');
-        time = regexprep(line(1),'Z.*','');
-        % TODO: Need to handle non-full versions of ISO time, e.g.,
-        % YYYY-mm-ddTHH, etc.
-        time = datenum(time,'yyyy-mm-ddTHH:MM:SS');
-        try
-            tmp = cellfun(@str2num,line(2:end),'Uniform',1);
-        catch
-            error('Problem with line %d:\n%s',i,datas{i});
+        % Test cases
+        %str = sprintf('2012-02-01T00:00:00.000Z,1,2\n2012-02-01T00:00:00.000Z,1,2\n');
+        %str = sprintf('2012-02-01T00:00:00.0000,1,2\n2012-02-01T00:00:00.0000,1,2\n');
+        %str = [str,str]
+
+        % Space after comma needed here to keep replacement same length.
+        str(1:timelen+1) = regexprep(str(1:timelen+1),...
+            '([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9]{0,3})Z*,',...
+            '$1,$2,$3,$4,$5,$6,$7, ');
+
+        % Other lines
+        str = regexprep(str,...
+            '\n([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9]{0,3})Z*,',...
+            '\n$1,$2,$3,$4,$5,$6,$7,');
+        tmp = str2num(str);
+        data = [datenum(tmp(1:7)),tmp(8:end)];    
+        if (DOPTS.logging) fprintf('Done.\n');end
+    else
+        % Slow method.  Iteratve over each line.
+        % Assumes not string data.
+        if (DOPTS.logging) fprintf('Slow parsing %s ... ',fname);end
+        datas = strread(str,'%s','delimiter',sprintf('\n'));
+        for i = 1:length(datas)
+            line = strsplit(datas{i},',');
+            time = regexprep(line(1),'Z.*','');
+            % TODO: Need to handle non-full versions of ISO time, e.g.,
+            % YYYY-mm-ddTHH, etc.
+            time = datenum(time,'yyyy-mm-ddTHH:MM:SS');
+            try
+                tmp = cellfun(@str2num,line(2:end),'Uniform',1);
+            catch
+                error('Problem with line %d:\n%s',i,datas{i});
+            end
+            data(i,:) = [time,tmp];
         end
-        data(i,:) = [time,tmp];
+        if (DOPTS.logging) fprintf('Done.\n');end
     end
-	if (DOPTS.logging) fprintf('Done.\n');end
 
     if (DOPTS.cache_files)
         save(regexprep(fname,'\.csv',''),'url','data','meta');
