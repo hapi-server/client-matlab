@@ -59,7 +59,7 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %
 % Implemented
 DOPTS = struct();
-DOPTS.update_script = 0;
+DOPTS.update_script = 1;
 DOPTS.logging       = 0;
 DOPTS.cache_files   = 1; % Save data requested in file for off-line use.
 DOPTS.use_cache     = 1; % Use cached file associated with request if its exists.
