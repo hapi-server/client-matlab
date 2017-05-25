@@ -1,6 +1,6 @@
 # MATLAB client for accessing HAPI data
 
-# Installation
+## Installation
 
 In MATLAB, execute
 ```matlab
@@ -12,7 +12,7 @@ help hapi
 
 ```hapi.m``` automatically updates itself if a newer version is found in repository.  See ```help hapi``` to turn of automatic updates.
 
-# Examples
+## Examples
 
 Example usage is given in [https://github.com/hapi-server/matlab-client/hapi_demo.m](hapi_demo.m)
 
@@ -27,6 +27,6 @@ and then enter
 ```matlab
 hapi_demo
 ```
-# Contact
+## Contact
 
 Bob Weigel <rweigel@gmu.edu>
