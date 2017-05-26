@@ -106,13 +106,21 @@ if (DOPTS.update_script)
     digest = dec2hex(typecast(md.digest(fread(fid, inf, '*uint8')),'uint8'));
     fclose(fid);
     md5a = lower(reshape(digest',1,[]));
-    str = urlread(DOPTS.scripturl);
-    digest = dec2hex(typecast(md.digest(str),'uint8'));
+    urlwrite(DOPTS.scripturl,'.hapi.m');
+    fid = fopen('.hapi.m','r');
+    digest = dec2hex(typecast(md.digest(fread(fid, inf, '*uint8')),'uint8'));
+    fclose(fid);
     md5b = lower(reshape(digest',1,[]));
-    if (~strmatch(md5a,md5b))
-        fid = fopen('hapi.m','w');
-        fprintf(fid,'%s',str);
-        fclose(fid);
+    if (isempty(strmatch(md5a,md5b)))
+        %reply = input('Newer version of hapi.m found.  Install? [y]/n:','s');
+        %if strcmp(lower(reply),'y')
+        fname = sprintf('.hapi.m.%s',datestr(now,29));
+        movefile('hapi.m',fname);
+        movefile('.hapi.m','hapi.m');
+        fprintf('Updated hapi.m. Old version saved as %s. Use options to disable updates.\n',fname);
+        %else
+        %    fprintf('Not updating hapi.m. Update attempts can be disabled with options.\n');
+        %end
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
