@@ -9,13 +9,46 @@
 
 % Time series example
 
-% Spectrogram example
+%opts       = struct('logging',1,'use_cache',0);
+opts       = struct('logging',1);
+
+% Scalar time series
+server     = 'http://tsds.org/get/SSCWeb/hapi';
+dataset    = 'ace';
+parameters = 'X_TOD';
+start      = '2012-02-01';
+stop       = '2012-02-02';
+
+% Get data
+[data,meta] = hapi(server,dataset,parameters,start,stop,opts);
+
+% Replace fills with NaN for plotting (so gaps shown in line)
+data(data(:,2) == str2num(meta.parameters{2}.fill)) = NaN;
+
+figure(2)
+    ph = plot(data(:,1),data(:,2));
+    th = title(sprintf('%s/id=%s&parameters=%s',...
+        server,dataset,meta.parameters{2}.name));
+    set(th,'Interpreter','none','FontWeight','normal');
+    yh = ylabel([meta.parameters{2}.name,' [',meta.parameters{2}.units,']']);
+    set(yh,'Interpreter','none'); % Don't interpret _ as subscript
+    datetick
+    grid on;
+    if (data(1,1) - data(end,1) <= 1)
+        xlabel(['Universal Time on ',datestr(data(1,1),'yyyy-mm-dd')]);
+    else
+        xlabel('Universal Time');
+    end
+    if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
+
+    print -dpng hapi_demo2.png
+
+% Spectrogram time series
 server     = 'http://datashop.elasticbeanstalk.com/hapi';
 dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
 parameters = 'A';
 start      = '2002-01-01';
 stop       = '2002-01-02';
-opts       = struct('logging',true);
 
 % Get data
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
@@ -59,39 +92,6 @@ figure(1)
     end
     if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
     print -dpng hapi-figures/hapi_demo1.png
-
-break
-
-server     = 'http://tsds.org/get/SSCWeb/hapi';
-dataset    = 'ace';
-parameters = 'X_TOD';
-start      = '2012-02-01';
-stop       = '2012-02-02';
-opts       = struct('logging',0,'use_cache',0);
-
-% Get data
-[data,meta] = hapi(server,dataset,parameters,start,stop,opts);
-
-% Replace fills with NaN for plotting (so gaps shown in line)
-data(data(:,2) == str2num(meta.parameters{2}.fill)) = NaN;
-
-figure(2)
-    ph = plot(data(:,1),data(:,2));
-    th = title(sprintf('%s/id=%s&parameters=%s',...
-        server,dataset,meta.parameters{2}.name));
-    set(th,'Interpreter','none','FontWeight','normal');
-    yh = ylabel([meta.parameters{2}.name,' [',meta.parameters{2}.units,']']);
-    set(yh,'Interpreter','none'); % Don't interpret _ as subscript
-    datetick
-    grid on;
-    if (data(1,1) - data(end,1) <= 1)
-        xlabel(['Universal Time on ',datestr(data(1,1),'yyyy-mm-dd')]);
-    else
-        xlabel('Universal Time');
-    end
-    if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
-
-    print -dpng hapi_demo2.png
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -103,30 +103,18 @@ figure(2)
 sn = 1; % Server number in servers.txt
 dn = 1; % Dataset number from first server
 
-opts = struct('logging',true);
-
-% List all HAPI servers
-hapi(); 
-% or 
-% hapi(opts);
-
-% Cell array of server URLs
-Servers = hapi(); 
-% or
-% Servers hapi(opts);
-
 % List datasets from second server in list
 hapi(Servers{sn}); 
 % or
 % hapi(Servers{sn},opts); 
 
-% Cell array of dataset IDs from server
-Datasets = hapi(Servers{sn}); 
+% MATLAB structure of JSON dataset list
+metad = hapi(Servers{sn}); 
 % or 
-% hapi(Servers{sn},opts)
+% metad = hapi(Servers{sn},opts)
 
-% List info for parameters in first dataset
-Parameters = hapi(Servers{sn},Datasets{dn});
+% MATLAB structure of JSON parameter list
+metap = hapi(Servers{sn},metad.catalog{dn}.id);
 % or
-% Parameters = hapi(Servers{sn},Datasets{dn},opts);
+% metap = hapi(Servers{sn},ids{dn},opts);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

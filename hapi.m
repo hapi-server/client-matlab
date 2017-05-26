@@ -78,7 +78,7 @@ DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-clie
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Extract options (better way to do this?)
+% Extract options (TODO: find better way to do this.)
 nin = nargin;
 if exist('SERVER','var') && isstruct(SERVER),OPTS = SERVER;clear SERVER;end
 if exist('DATASET','var') && isstruct(DATASET),OPTS = DATASET;clear DATASET;;end
@@ -100,7 +100,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get latest version of script
 if (DOPTS.update_script)
-    % Not tested.
     % http://www.mathworks.com/matlabcentral/fileexchange/55746-javamd5
     md = java.security.MessageDigest.getInstance('MD5');
     fid = fopen('hapi.m','r');
@@ -148,15 +147,27 @@ end
 % Datasets
 if (nin == 1)
     url = [SERVER,'/catalog/'];
-    if (DOPTS.logging) fprintf('Reading %s ... ',url);end
+    if (DOPTS.logging),fprintf('Reading %s ... ',url);end
 
     opts = weboptions('ContentType', 'json');
     data = webread(url,opts);
     
     if (DOPTS.logging || nargout == 0),fprintf('Available datasets from %s:\n',SERVER);end
-    ids = {data.catalog.id};
-    for i = 1:length(ids)
-        if (DOPTS.logging || nargout == 0),fprintf('  %s\n',ids{i});end
+
+    if isstruct(data.catalog) % Make data.catalog cell array of structs.
+        % Why is data.catalog a struct array instead of
+        % a cell array of structs like data.parameters?
+        % Perhaps when JSON array has objects with only one key?
+        % This fixes.
+        ids = {data.catalog.id};
+        for i = 1:length(ids)
+           tmp{i} = struct('id',ids{i});
+        end
+        data.('catalog') = tmp;
+    end
+
+    for i = 1:length(data.catalog)
+        if (DOPTS.logging || nargout == 0),fprintf('  %s\n',data.catalog{i}.id);end
     end
     if (DOPTS.logging || nargout == 0),fprintf('\n');end
     return;
@@ -179,8 +190,8 @@ if (nin == 2)
         stop  = data.lastDate;
     else
         % HAPI 1.1
-        start = data.firstDate;
-        stop  = data.lastDate;
+        start = data.startDate;
+        stop  = data.stopDate;
     end
 
     if (DOPTS.logging || nargout == 0)
@@ -203,7 +214,7 @@ end
 if (nin == 3 || nin == 5)
 
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi || DOPTS.use_cache)
-        urld = regexprep(SERVER,'http://(.*)','$1');
+        urld = regexprep(SERVER,'https*://(.*)','$1');
         urld = ['hapi-data',filesep(),regexprep(urld,'/','_')];
         fname = sprintf('%s_%s_%s_%s',...
                         DATASET,...
@@ -241,7 +252,8 @@ if (nin == 3 || nin == 5)
     if (DOPTS.logging) fprintf('Done.\n');end
 
     if (DOPTS.cache_hapi)
-        % Ideally would serialized meta to JSON, but not simple to do.
+        % Ideally meta variable would be serialized meta to JSON, so second
+        % request is not needed, but this is not simple to do.
         fnamej = regexprep(fname,'\.csv','.json');
         urlwrite(url,fnamej);
         if (DOPTS.logging) fprintf('Wrote %s ...\n',fname);end
@@ -298,14 +310,14 @@ if (nin == 3 || nin == 5)
         % First line
         str(1:timelen+1) = regexprep(str(1:timelen+1),patm,patr);
         % Other lines
-        str = regexprep(str,patm,patr);
+        str = regexprep(str,['\n',patm],['\n',patr]);
         
         data = str2num(str);
         data = [datenum(data(:,1:6)),data(:,7:end)];
         if (DOPTS.logging) fprintf('Done.\n');end
     else
         % Slow method.  Iteratve over each line.
-        % Assumes not string data.
+        % Assumes no string columns.
         if (DOPTS.logging) fprintf('Slow parsing %s ... ',fname);end
         datas = strread(str,'%s','delimiter',sprintf('\n'));
         for i = 1:length(datas)
