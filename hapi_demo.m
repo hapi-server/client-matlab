@@ -94,14 +94,11 @@ figure(1)
     print -dpng hapi-figures/hapi_demo1.png
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata request examples
-
 sn = 1; % Server number in servers.txt
 dn = 1; % Dataset number from first server
+Servers = hapi(); 
 
 % List datasets from second server in list
 hapi(Servers{sn}); 
