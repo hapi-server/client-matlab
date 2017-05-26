@@ -1,7 +1,7 @@
 function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 % HAPI - Interface to Heliophysics Data Environment API
 %
-%   Version 2017-05-24.
+%   Version 2017-05-26.
 %
 %   Get metadata and data from a HAPI v1.1 compliant data server
 %   (https://github.com/hapi-server/).  See note below for GUI options for
@@ -86,7 +86,7 @@ if exist('PARAMETERS','var') && isstruct(PARAMETERS),OPTS = PARAMETERS;;end
 if exist('START','var') && isstruct(START),OPTS = START;clear SERVER;;end
 if exist('STOP','var') && isstruct(STOP),OPTS = STOP;clear SERVER;end
 
-if exist('OPTS')
+if exist('OPTS','var')
     keys = fieldnames(OPTS);
     nin = nin-1;
     if length(keys)
@@ -316,8 +316,7 @@ if (nin == 3 || nin == 5)
         data = [datenum(data(:,1:6)),data(:,7:end)];
         if (DOPTS.logging) fprintf('Done.\n');end
     else
-        % Slow method.  Iteratve over each line.
-        % Assumes no string columns.
+        % Slow method.  Iteratve over each line. Assumes no string columns.
         if (DOPTS.logging) fprintf('Slow parsing %s ... ',fname);end
         datas = strread(str,'%s','delimiter',sprintf('\n'));
         for i = 1:length(datas)
