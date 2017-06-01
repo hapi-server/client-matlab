@@ -55,15 +55,18 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %
 %   See also HAPI_DEMO, DATENUM.
 
-% This is free and unencumbered software released into the public domain.
-% R.S Weigel <rweigel@gmu.edu>
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Author: R.S Weigel <rweigel@gmu.edu>
+% License: This is free and unencumbered software released into the public domain.
+% Repository: https://github.com/hapi-server/matlab-client.git
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Default Options
 %
 % Implemented
 DOPTS = struct();
-DOPTS.update_script = 1;
+DOPTS.update_script = 0;
 DOPTS.logging       = 0;
 DOPTS.cache_mlbin   = 1; % Save data requested in MATLAB binary for off-line use.
 DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) for debugging/sharing.
@@ -71,8 +74,9 @@ DOPTS.use_cache     = 1; % Use cached MATLAB binary file associated with request
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
 
+DOPTS.use_binary    = 1; % Use binary transport.
+
 % TODO: These are not implemented.
-%DOPTS.use_binary    = 0; % Use binary transport.
 %DOPTS.split_long    = 0; % Split long requests into chunks and fetch chunks.
 %DOPTS.parallel_req  = 0; % Use parallel requests for chunks.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -192,15 +196,8 @@ if (nin == 2)
     data = webread(url,opts);
     if (DOPTS.logging) fprintf('Done.\n');end
 
-    if isfield(data,'firstDate')
-        % HAPI 1.0
-        start = data.firstDate;
-        stop  = data.lastDate;
-    else
-        % HAPI 1.1
-        start = data.startDate;
-        stop  = data.stopDate;
-    end
+    start = data.startDate;
+    stop  = data.stopDate;
 
     if (DOPTS.logging || nargout == 0)
         fprintf('Available parameters in %s from %s:\n',DATASET,SERVER);
@@ -242,7 +239,20 @@ if (nin == 3 || nin == 5)
             return
         end
     end
-    
+
+    if (DOPTS.use_binary)
+        % Determine server supports binary
+        url = [SERVER,'/capabilities'];
+        if (DOPTS.logging) fprintf('Reading %s ... ',url);end
+        opts = weboptions('ContentType', 'json');
+        caps = webread(url,opts);
+        if (DOPTS.logging) fprintf('Done.\n');end
+        if isempty(strmatch('fbinary',caps.outputFormats,'exact'))
+            fprintf('DOPTS.use_binary = true, but server does not support\n');
+            DOPTS.use_binary = false;
+        end
+    end
+
     url = [SERVER,'/info?id=',DATASET,'&parameters=',PARAMETERS];
 
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi)
@@ -274,6 +284,32 @@ if (nin == 3 || nin == 5)
 
     url = [SERVER,'/data?id=',DATASET,'&parameters=',PARAMETERS,'&time.min=',START,'&time.max=',STOP];
 
+    if (DOPTS.use_binary)
+        url = [url,'&format=fbinary'];
+        if (DOPTS.cache_hapi)
+            fnameb = regexprep(fname,'\.csv','.fbin');
+            if (DOPTS.logging) fprintf('Downloading %s ... ',url);end
+            urlwrite(url,fnameb);
+            if (DOPTS.logging) fprintf('Done.\n');end
+            if (DOPTS.logging) fprintf('Reading %s ... ',fnameb);end
+            fid = fopen(fnameb);
+            p = char(fread(fid,21,'uint8=>char'));
+            n = str2num(p(1));
+            data = fread(fid,'double');
+            fclose(fid);
+            if (DOPTS.logging) fprintf('Done.\n');end
+            size = 1 + meta.parameters{2}.size;
+            data = reshape(data,size,length(data)/size)';
+            zerotime = p(2:end)';
+            data(:,1) = datenum(zerotime,'yyyy-mm-ddTHH:MM:SS') + data(:,1)/(86400*10^(3*n));
+        end
+        
+        if (DOPTS.cache_mlbin)
+            save(regexprep(fname,'\.csv',''),'url','data','meta');
+        end
+        return;
+    end
+    
     try
         if (DOPTS.cache_hapi)
             if (DOPTS.logging) fprintf('Downloading %s ... ',url);end
@@ -314,7 +350,6 @@ if (nin == 3 || nin == 5)
             patm = '(^|\n)([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9]{0,3})Z*,';
             patr = '$1$2,$3,$4,$5,$6,$7.$8,';
         end
-        
         str = regexprep(str,patm,patr);
         data = str2num(str);
         data = [datenum(data(:,1:6)),data(:,7:end)];

@@ -9,8 +9,25 @@
 
 % Time series example
 
-%opts       = struct('logging',1,'use_cache',0);
-opts       = struct('logging',1);
+% Scalar time series
+
+opts       = struct('logging',1,'use_cache',0);
+server     = 'http://mag.gmu.edu/TestData/hapi';
+%server     = 'http://localhost:8999/hapi';
+dataset    = 'TestData';
+parameters = 'scalar';
+start      = '1970-01-01';
+stop       = '1970-01-02';
+% Get data
+[data,meta] = hapi(server,dataset,parameters,start,stop,opts);
+
+figure(1)
+plot(data(:,1),data(:,2),'r');
+datetick
+
+break
+
+opts       = struct('logging',1,'use_cache',0);
 
 % Scalar time series
 server     = 'http://tsds.org/get/SSCWeb/hapi';
@@ -21,6 +38,7 @@ stop       = '2012-02-02';
 
 % Get data
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
+
 
 % Replace fills with NaN for plotting (so gaps shown in line)
 data(data(:,2) == str2num(meta.parameters{2}.fill)) = NaN;
@@ -94,11 +112,14 @@ figure(1)
     print -dpng hapi-figures/hapi_demo1.png
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata request examples
+
 sn = 1; % Server number in servers.txt
 dn = 1; % Dataset number from first server
-Servers = hapi(); 
 
 % List datasets from second server in list
 hapi(Servers{sn}); 
