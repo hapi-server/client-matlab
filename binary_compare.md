@@ -1,39 +1,41 @@
-Having strings for time in CSV makes sense because it is easily readable and its parsing time is comparable to the parsing time of other elements in each record.
+# Proposal Output Formats
 
-For binary, parsing and interpreting the time string is a significant fraction of time.  
+Based on testing in MATLAB and Python, I think that we need to define two new output formats: fcsv and fbin (f for fast).
 
-Based on testing with MATLAB, if we used doubles for time instead of string, the time to have data in a form for plotting is ~75x faster. Typical results for [a benchmark script](https://github.com/hapi-server/matlab-client/binary_compare.m) are:
+# Motivations
 
+Using MATLAB (with many optimization efforts), I found that at best
+* to read 4 MB of HAPI CSV data from disk and put it in a form that can be sent to a plot requires ~10 seconds.  This is not acceptable.
+* to do the same with HAPI binary takes ~3 seconds.  This is marginally acceptable.
+* a simple format specification will lead to a 30x speed-up for CSV and a 300x speed-up for binary.
+
+In Python, the speed-up is similar.
+
+Of course, the rate limiter is the representation of time in HAPI CSV and Binary.
+
+# Format Specification
+
+Time in CSV is represented as an integer.  Time in binary is represented as a integer cast to a double. The ordinal time and time unit is found from a /info request.  The units of time are either seconds, milliseconds, microseconds, etc.
+
+Typical results for [a benchmark script in MATLAB](https://github.com/hapi-server/matlab-client/binary_compare.m) are in the table below. The results are similar for [Python](https://github.com/hapi-server/python-client/binary_compare.md).
+
+Note that in MATLAB, having time represented as a double as a signifcant benefit.  In Python, the benefit is less pronounced.
+
+The test was to read a scalar time series with 86400 records (~2-4 MB file size).  
 ```
-fbin total time:       0.0336
-bin memmap time:       0.0025
-bin extract data time: 0.1569
-bin extract time time: 0.0897
-bin datenum time:      1.4137
+csv total:         10.6454s	# HAPI CSV
+fcsv total:        0.3619s	# Proposed CSV
+fbin total:        0.0108s	# Proposed binary (time and parameter doubles)
+fbin w/ints total: 0.0966s	# Proposed binary (time is double, parameter is integer)
+bin total:         2.1891s	# HAPI binary
+  (bin memmap:        0.0033s)
+  (bin extract data:  0.2264s)
+  (bin extract time:  0.1318s)
+  (bin datenum:       1.8277s)
+
+Time Ratios
+csv/fcsv:          29.4
+csv/bin:           4.9
+bin/fbin:          203.5
+bin/(fbin w/ints): 22.7
 ```
-
-This corresponds to a speed-up of 74 = (1.41 + 0.9 + 0.16 + 0.0025)/0.0336 (this varies between 25 and 300 on my machine).  I get similar results using [a python benchmark script](https://github.com/hapi-server/python-client/binary_compare.py).
-
-Therefore our specification for binary somewhat defeats the purpose of binary (speed). We could either define a new binary output (e.g., "sensiblebinary") or modify the existing.
-
-Suggestion for modification of existing binary or new "sensiblebinary" output option: 
-
-A short header that indicates that time values are interpreted as, e.g., "seconds since 2001-01-01:T00:00:00".  For example,
-
-If the CSV output is
-```
-2001-01-01T00:00:00, 11.0
-2001-01-01T00:01:00, 12.0
-```
-
-"sensible binary" would be 
-
-```Byte 1 (char) = 0``` (0,1,2,3) time unit corresponding to (seconds, milli, micro, nano)
-
-```Bytes 2-21 (chars) = 2001-01-01T00:00:00\0``` zero time
-
-```Bytes 22-(22+8*4) (doubles) = (0.0, 11.0, 1.0, 12.0)```
-
-Sensible binary has been implemented in [https://github.com/hapi-server/matlab-client](https://github.com/hapi-server/matlab-client) and [https://github.com/hapi-server/python-client](https://github.com/hapi-server/python-client).
-
-Note that the header information could be specified in an ```/info``` response if we did not want to have a header.

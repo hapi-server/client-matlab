@@ -298,7 +298,7 @@ if (nin == 3 || nin == 5)
             fid = fopen(fnamefbin);
             p = char(fread(fid,21,'uint8=>char'));
             n = str2num(p(1));
-            data = fread(fid,'double');
+            data = fread(fid,'double'); % TODO: Account for mixed types
             fclose(fid);
             if (DOPTS.logging) fprintf('Done.\n');end
             size = 1 + meta.parameters{2}.size;
