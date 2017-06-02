@@ -17,7 +17,10 @@ Suggestion for modification of existing binary or new "sensiblebinary" output op
 Specify in the first 22 bytes in the binary response as: 
 
 ```Byte 1 (char) = 0-3``` corresponding to (seconds, milli, micro, nano)
+
 ```Bytes 2-22 (chars)``` = yyyy-mm-ddTHH:MM:SS + \0.  
+
+```Bytes 23- (doubles)``` 
 
 Possibly we should have bytes 23-100 be reserved for future use.
 
