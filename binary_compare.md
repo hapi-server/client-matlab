@@ -17,7 +17,7 @@ Of course, the rate limiter is the representation of time in HAPI CSV and Binary
 
 Time in CSV is represented as an integer.  Time in binary is represented as a integer cast to a double. The ordinal time and time unit is found from a /info request.  The units of time are either seconds, milliseconds, microseconds, etc.
 
-Typical results for [a benchmark script in MATLAB](https://github.com/hapi-server/matlab-client/binary_compare.m) are in the table below. The results are similar for [Python](https://github.com/hapi-server/python-client/binary_compare.md).
+Typical results for [a benchmark script in MATLAB](https://github.com/hapi-server/matlab-client/blob/master/binary_compare.m) are in the table below. The results are similar for [Python](https://github.com/hapi-server/python-client/blob/master/binary_compare.md).
 
 Note that in MATLAB, having time represented as a double as a signifcant benefit.  In Python, the benefit is less pronounced.
 
