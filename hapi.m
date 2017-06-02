@@ -66,15 +66,16 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %
 % Implemented
 DOPTS = struct();
-DOPTS.update_script = 0;
+DOPTS.update_script = 1;
 DOPTS.logging       = 0;
 DOPTS.cache_mlbin   = 1; % Save data requested in MATLAB binary for off-line use.
 DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) for debugging/sharing.
 DOPTS.use_cache     = 1; % Use cached MATLAB binary file associated with request if its exists.
+DOPTS.use_binary    = 1; % Use binary transport.
+
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
 
-DOPTS.use_binary    = 1; % Use binary transport.
 
 % TODO: These are not implemented.
 %DOPTS.split_long    = 0; % Split long requests into chunks and fetch chunks.
@@ -87,8 +88,8 @@ nin = nargin;
 if exist('SERVER','var') && isstruct(SERVER),OPTS = SERVER;clear SERVER;end
 if exist('DATASET','var') && isstruct(DATASET),OPTS = DATASET;clear DATASET;;end
 if exist('PARAMETERS','var') && isstruct(PARAMETERS),OPTS = PARAMETERS;;end
-if exist('START','var') && isstruct(START),OPTS = START;clear SERVER;;end
-if exist('STOP','var') && isstruct(STOP),OPTS = STOP;clear SERVER;end
+if exist('START','var') && isstruct(START),OPTS = START;clear START;;end
+if exist('STOP','var') && isstruct(STOP),OPTS = STOP;clear STOP;end
 
 if exist('OPTS','var')
     keys = fieldnames(OPTS);
@@ -191,7 +192,7 @@ end
 if (nin == 2)
     url = [SERVER,'/info?id=',DATASET];
 
-    if (DOPTS.logging) fprintf('Reading %s ... ',url);end
+    if (DOPTS.logging) fprintf('Downloading %s ... ',url);end
 	opts = weboptions('ContentType', 'json');
     data = webread(url,opts);
     if (DOPTS.logging) fprintf('Done.\n');end
@@ -221,39 +222,24 @@ if (nin == 3 || nin == 5)
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi || DOPTS.use_cache)
         urld = regexprep(SERVER,'https*://(.*)','$1');
         urld = ['hapi-data',filesep(),regexprep(urld,'/','_')];
-        fname = sprintf('%s_%s_%s_%s',...
-                        DATASET,...
-                        regexprep(PARAMETERS,',','-'),...
-                        regexprep(START,'-|:\.|Z',''),...
-                        regexprep(STOP,'-|:|\.|Z',''));
-
-        fname = [urld,filesep(),fname,'.csv'];
+        if (nin == 5)
+            fname = sprintf('%s_%s_%s_%s',...
+                            DATASET,...
+                            regexprep(PARAMETERS,',','-'),...
+                            regexprep(START,'-|:\.|Z',''),...
+                            regexprep(STOP,'-|:|\.|Z',''));
+            fnamecsv  = [urld,filesep(),fname,'.csv'];
+            fnamemat  = [urld,filesep(),fname,'.mat'];
+            fnamebin  = [urld,filesep(),fname,'.bin'];
+            fnamefbin = [urld,filesep(),fname,'.fbin'];
+            urlcsv  = [SERVER,'/data?id=',DATASET,'&parameters=',PARAMETERS,'&time.min=',START,'&time.max=',STOP];
+            urlfbin = [urlcsv,'&format=fbinary'];
+            urlbin  = [urlcsv,'&format=binary'];
+        end        
+        urljson = [SERVER,'/info?id=',DATASET,'&parameters=',PARAMETERS];
+        fnamejson = sprintf('%s_%s',DATASET,regexprep(PARAMETERS,',','-'));
+        fnamejson = [urld,filesep(),fnamejson,'.json'];
     end
-
-    if (DOPTS.use_cache)
-        fnamem = regexprep(fname,'\.csv','.mat');
-        if exist(fnamem,'file');
-            if (DOPTS.logging) fprintf('Reading %s ... ',fnamem);end
-            load(fnamem);
-            if (DOPTS.logging) fprintf('Done.\n');end
-            return
-        end
-    end
-
-    if (DOPTS.use_binary)
-        % Determine server supports binary
-        url = [SERVER,'/capabilities'];
-        if (DOPTS.logging) fprintf('Reading %s ... ',url);end
-        opts = weboptions('ContentType', 'json');
-        caps = webread(url,opts);
-        if (DOPTS.logging) fprintf('Done.\n');end
-        if isempty(strmatch('fbinary',caps.outputFormats,'exact'))
-            fprintf('DOPTS.use_binary = true, but server does not support\n');
-            DOPTS.use_binary = false;
-        end
-    end
-
-    url = [SERVER,'/info?id=',DATASET,'&parameters=',PARAMETERS];
 
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi)
         if ~exist('hapi-data','dir')
@@ -264,35 +250,52 @@ if (nin == 3 || nin == 5)
         end    
     end
     
-    if (DOPTS.logging) fprintf('Reading %s ... ',url);end
+    if (DOPTS.logging) fprintf('Downloading %s ... ',urljson);end
 	opts = weboptions('ContentType', 'json');
-    meta = webread(url,opts);
+    meta = webread(urljson,opts);
     if (DOPTS.logging) fprintf('Done.\n');end
 
     if (DOPTS.cache_hapi)
         % Ideally meta variable would be serialized meta to JSON, so second
         % request is not needed, but this is not simple to do.
-        fnamej = regexprep(fname,'\.csv','.json');
-        urlwrite(url,fnamej);
-        if (DOPTS.logging) fprintf('Wrote %s ...\n',fname);end
+        urlwrite(urljson,fnamejson);
+        if (DOPTS.logging) fprintf('Wrote %s ...\n',fnamejson);end
     end
 
     if nin == 3
         data = meta;
         return
     end
-
-    url = [SERVER,'/data?id=',DATASET,'&parameters=',PARAMETERS,'&time.min=',START,'&time.max=',STOP];
+    
+    if (DOPTS.use_cache)
+        if exist(fnamemat,'file')
+            if (DOPTS.logging) fprintf('Reading %s ... ',fnamemat);end
+            load(fnamemat);
+            if (DOPTS.logging) fprintf('Done.\n');end
+            return
+        end
+    end
+    
+    if (DOPTS.use_binary)
+        % Determine if server supports binary
+        url = [SERVER,'/capabilities'];
+        if (DOPTS.logging) fprintf('Reading %s ... ',url);end
+        opts = weboptions('ContentType', 'json');
+        caps = webread(url,opts);
+        if (DOPTS.logging) fprintf('Done.\n');end
+        if isempty(strmatch('fbinary',caps.outputFormats,'exact'))
+            fprintf('DOPTS.use_binary = true, but server does not support binary output.\n');
+            DOPTS.use_binary = false;
+        end
+    end
 
     if (DOPTS.use_binary)
-        url = [url,'&format=fbinary'];
         if (DOPTS.cache_hapi)
-            fnameb = regexprep(fname,'\.csv','.fbin');
-            if (DOPTS.logging) fprintf('Downloading %s ... ',url);end
-            urlwrite(url,fnameb);
+            if (DOPTS.logging) fprintf('Downloading %s ... ',urlfbin);end
+            urlwrite(urlfbin,fnamefbin);
             if (DOPTS.logging) fprintf('Done.\n');end
-            if (DOPTS.logging) fprintf('Reading %s ... ',fnameb);end
-            fid = fopen(fnameb);
+            if (DOPTS.logging) fprintf('Reading %s ... ',fnamefbin);end
+            fid = fopen(fnamefbin);
             p = char(fread(fid,21,'uint8=>char'));
             n = str2num(p(1));
             data = fread(fid,'double');
@@ -303,35 +306,35 @@ if (nin == 3 || nin == 5)
             zerotime = p(2:end)';
             data(:,1) = datenum(zerotime,'yyyy-mm-ddTHH:MM:SS') + data(:,1)/(86400*10^(3*n));
         end
-        
-        if (DOPTS.cache_mlbin)
-            save(regexprep(fname,'\.csv',''),'url','data','meta');
-        end
+
+        if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
+        save(fnamemat,'urlfbin','data','meta');
+        if (DOPTS.logging) fprintf('Done.\n');end
         return;
     end
     
     try
         if (DOPTS.cache_hapi)
-            if (DOPTS.logging) fprintf('Downloading %s ... ',url);end
-            urlwrite(url,fname);
+            if (DOPTS.logging) fprintf('Downloading %s ... ',urlcsv);end
+            urlwrite(urlcsv,fnamecsv);
             if (DOPTS.logging) fprintf('Done.\n');end
-            if (DOPTS.logging) fprintf('Reading %s ... ',fname);end
-            fid = fopen(fname,'r');
+            if (DOPTS.logging) fprintf('Reading %s ... ',fnamecsv);end
+            fid = fopen(fnamecsv,'r');
             str = fscanf(fid,'%c');
             fclose(fid);
             if (DOPTS.logging) fprintf('Done.\n');end
         else
-            if (DOPTS.logging) fprintf('Reading %s ... ',url);end
-            str = urlread(url);
+            if (DOPTS.logging) fprintf('Reading %s ... ',urlcsv);end
+            str = urlread(urlcsv);
             if (DOPTS.logging) fprintf('Done.\n');end
         end
     catch
-        error('Error when attempting to fetch %s\n',url);
+        error('\nError when attempting to fetch %s\n',urlcsv);
     end
 
     timelen = meta.parameters{1}.length;
     if (timelen == 23 || timelen == 24)
-        if (DOPTS.logging) fprintf('Fast parsing %s ... ',fname);end
+        if (DOPTS.logging) fprintf('Fast parsing %s ... ',fnamecsv);end
         
         % TODO: Write code for other time lengths.
         % TODO: Check that no other variables are strings
@@ -355,8 +358,8 @@ if (nin == 3 || nin == 5)
         data = [datenum(data(:,1:6)),data(:,7:end)];
         if (DOPTS.logging) fprintf('Done.\n');end
     else
-        % Slow method.  Iteratve over each line. Assumes no string columns.
-        if (DOPTS.logging) fprintf('Slow parsing %s ... ',fname);end
+        % Slow method.  Iterate over each line. Assumes no string columns.
+        if (DOPTS.logging) fprintf('Slow parsing %s ... ',fnamecsv);end
         datas = strread(str,'%s','delimiter',sprintf('\n'));
         for i = 1:length(datas)
             line = strsplit(datas{i},',');
@@ -375,7 +378,9 @@ if (nin == 3 || nin == 5)
     end
 
     if (DOPTS.cache_mlbin)
-        save(regexprep(fname,'\.csv',''),'url','data','meta');
+        if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
+        save(fnamemat,'urlcsv','data','meta');
+        if (DOPTS.logging) fprintf('Done.\n');end
     end
 
     return;

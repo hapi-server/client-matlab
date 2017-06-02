@@ -1,49 +1,47 @@
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Data request examples
-%
-% Plot first dataset from two different hapi servers.
-% Saves plots as hapi_demo1.png and hapi_demo2.png
-%
-% TODO: Abstract plotting and put in a function named hapiplot.m
-%       Or, put in hapi.m and have OPTS.plot option?
+% Metadata request examples
+sn = 3; % Server number in servers.txt
+dn = 1; % Dataset number from first server
 
-% Time series example
+Servers = hapi();
 
-% Scalar time series
+% List datasets from second server in list
+hapi(Servers{sn}); 
+% or
+% hapi(Servers{sn},opts); 
 
-opts       = struct('logging',1,'use_cache',0);
-server     = 'http://mag.gmu.edu/TestData/hapi';
-%server     = 'http://localhost:8999/hapi';
-dataset    = 'TestData';
-parameters = 'scalar';
-start      = '1970-01-01';
-stop       = '1970-01-02';
-% Get data
-[data,meta] = hapi(server,dataset,parameters,start,stop,opts);
+% MATLAB structure of JSON dataset list
+metad = hapi(Servers{sn}); 
+% or 
+% metad = hapi(Servers{sn},opts)
 
-figure(1)
-plot(data(:,1),data(:,2),'r');
-datetick
+% MATLAB structure of JSON parameter list
+metap = hapi(Servers{sn}, metad.catalog{dn}.id);
+% or
+% metap = hapi(Servers{sn},ids{dn},opts);
 
-break
+% MATLAB structure of reduced JSON parameter list
+metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{2}.name);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-opts       = struct('logging',1,'use_cache',0);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Scalar time series example. Save as figures/hapi_demo1.png.
 
-% Scalar time series
 server     = 'http://tsds.org/get/SSCWeb/hapi';
 dataset    = 'ace';
 parameters = 'X_TOD';
 start      = '2012-02-01';
 stop       = '2012-02-02';
+opts       = struct('logging',1,'use_cache',0);
 
 % Get data
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
 
-
 % Replace fills with NaN for plotting (so gaps shown in line)
 data(data(:,2) == str2num(meta.parameters{2}.fill)) = NaN;
 
-figure(2)
+figure(2);clf
     ph = plot(data(:,1),data(:,2));
     th = title(sprintf('%s/id=%s&parameters=%s',...
         server,dataset,meta.parameters{2}.name));
@@ -59,9 +57,12 @@ figure(2)
     end
     if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
 
-    print -dpng hapi_demo2.png
+    print -dpng hapi-figures/hapi_demo2.png
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Spectrogram time series
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Spectrogram time series example. Save as figures/hapi_demo2.png.
+
 server     = 'http://datashop.elasticbeanstalk.com/hapi';
 dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
 parameters = 'A';
@@ -82,7 +83,7 @@ data(data == str2num(meta.parameters{2}.fill)) = NaN;
 m     = min(min(data));
 data  = log10(data - m + 1);
 
-figure(1)
+figure(1);clf
     % Plot matrix as colored squares.
     p = pcolor(time',log10(bins'),data');
     set(p,'EdgeColor','none'); % Don't show boundaries for squares.
@@ -110,29 +111,4 @@ figure(1)
     end
     if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
     print -dpng hapi-figures/hapi_demo1.png
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Metadata request examples
-
-sn = 1; % Server number in servers.txt
-dn = 1; % Dataset number from first server
-
-% List datasets from second server in list
-hapi(Servers{sn}); 
-% or
-% hapi(Servers{sn},opts); 
-
-% MATLAB structure of JSON dataset list
-metad = hapi(Servers{sn}); 
-% or 
-% metad = hapi(Servers{sn},opts)
-
-% MATLAB structure of JSON parameter list
-metap = hapi(Servers{sn},metad.catalog{dn}.id);
-% or
-% metap = hapi(Servers{sn},ids{dn},opts);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
