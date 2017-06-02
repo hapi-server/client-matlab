@@ -14,13 +14,18 @@ Therefore our specification for binary somewhat defeats the purpose of binary (s
 
 Suggestion for modification of existing binary or new "sensiblebinary" output option: 
 
+Example: CSV output of
+```2001-01-01T00:00:00, 11.0```
+```2001-01-01T00:01:00, 12.0```
+
+
 Specify in the first 22 bytes in the binary response as: 
 
 ```Byte 1 (char) = 0-3``` corresponding to (seconds, milli, micro, nano)
 
-```Bytes 2-22 (chars)``` = yyyy-mm-ddTHH:MM:SS + \0.  
+```Bytes 2-22 (chars)``` = 02001-01-01T00:00:00\ Leading zere means time increment is 1 sec.  Time stamp is zero time.
 
-```Bytes 23- (doubles)``` 
+```Bytes 23-65 (doubles)``` (0.0, 11.0, 1.0, 12.0)
 
 Possibly we should have bytes 23-100 be reserved for future use.
 
