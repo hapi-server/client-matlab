@@ -23,7 +23,7 @@ Specify in the first 22 bytes in the binary response as:
 
 ```Byte 1 (char) = 0-3``` corresponding to (seconds, milli, micro, nano)
 
-```Bytes 2-22 (chars)``` = 02001-01-01T00:00:00\ Leading zere means time increment is 1 sec.  Time stamp is zero time.
+```Bytes 2-22 (chars)``` = 02001-01-01T00:00:00\0 Leading zere means time increment is 1 sec.  Time stamp is zero time.
 
 ```Bytes 23-65 (doubles)``` (0.0, 11.0, 1.0, 12.0)
 
