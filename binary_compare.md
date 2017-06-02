@@ -15,8 +15,10 @@ Therefore our specification for binary somewhat defeats the purpose of binary (s
 Suggestion for modification of existing binary or new "sensiblebinary" output option: 
 
 Example: CSV output of
-```2001-01-01T00:00:00, 11.0```
-```2001-01-01T00:01:00, 12.0```
+```
+2001-01-01T00:00:00, 11.0
+2001-01-01T00:01:00, 12.0
+```
 
 
 Specify in the first 22 bytes in the binary response as: 
