@@ -23,7 +23,7 @@ Time in CSV and binary are represented as an integer.  The epoch time and time u
 
 Benchmark results are given in the following section.  They key result is that `fcsv` is ~50x faster to read and `fbin` is ~100x faster to read.
 
-I could imagine excusing a factor of 5 or 10 for simplicity over speed.  However, the proposed fast output formats are equally as simple as the HAPI output formats.  The read code for the "fast" formats is simpler.  In MATLAB, it is one line: `data = load('filename)`.
+I could imagine excusing a factor of 5 or 10 for simplicity over speed.  However, the proposed fast output formats are equally as simple as the HAPI output formats.  The read code for the "fast" formats is simpler.  In MATLAB, it is one line: `data = load('filename)`.  Similar for Python.
 
 The only real advantage of the existing HAPI CSV and Binary formats is that one can look at the file and see unambiguious time strings.  But the format is for machine-to-machine communication.  So why are we using ISO 8601 strings in the HAPI output?
 
