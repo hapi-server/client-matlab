@@ -4,7 +4,7 @@ Based on extensive testing in MATLAB and Python, I think that we need to define 
 
 Or re-define our current formats.
 
-Given that we have not announced version 1.2, we should carefully consider re-defining the formats.  When we discussed the formats orginally, the [premature optimization](http://ubiquity.acm.org/article.cfm?id=1513451) cliche was used a justification for not worring about the obvious efficiency penalty of using IS0-8601 strings in the output formats.  This was unfortunate and I think that we should fix this.  
+Given that we have not announced version 1.2, we should carefully consider re-defining the formats.  When we discussed the formats orginally, the [premature optimization](http://ubiquity.acm.org/article.cfm?id=1513451) cliche was used a justification for not worring about the obvious efficiency penalty of using IS0-8601 strings in the output formats.  This was unfortunate and I think that we should fix this.  We have not announced 1.2 publicly yet and we should use this opportunity to get things right the first time.
 
 # Motivations
 
