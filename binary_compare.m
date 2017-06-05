@@ -10,17 +10,26 @@ file = 'scalar'; n = 1; % Would get n from size from /info
 %file = 'vector';  n = 3; % (3-component)
 %file = 'spectra'; n = 10; % (10-channel)
 
-% Download HAPI csv
-urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=csv'],[file,'.csv']);
-% Download HAPI binary
-urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=binary'],[file,'.bin']);
-% Download fast csv
-urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fcsv'],[file,'.fcsv']);
-% Download fast binary; all doubles
-urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],[file,'.fbin']);
-% Download fast binary; time is double, parameter is integer
-urlwrite([base,'/data/?id=TestData&parameters=',file,'int','&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],[file,'int.fbin']);
+if (0)
+    % Download HAPI csv
+    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=csv'],[file,'.csv']);
+    % Download HAPI binary
+    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=binary'],[file,'.bin']);
+    % Download fast csv
+    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fcsv'],[file,'.fcsv']);
+    % Download fast binary; all doubles
+    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],[file,'.fbin']);
+    % Download fast binary; time is double, parameter is integer
+    urlwrite([base,'/data/?id=TestData&parameters=',file,'int','&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],[file,'int.fbin']);
+end
 
+fid = fopen([file,'.fbin']);
+tic
+ba = fread(fid,'uint8=>uint8');
+toc
+fclose(fid)
+whos ba
+break
 % Note that the fast binary served from the above server have the ordinal
 % time and time unit in the first 21 bytes of the file. The fast csv file
 % is assumed to start at an arbitrary ordinal time. The results will not 
