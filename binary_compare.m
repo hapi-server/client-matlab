@@ -29,6 +29,9 @@ ba = fread(fid,'uint8=>uint8');
 toc
 fclose(fid)
 whos ba
+
+Nc = 2; % Number of columns
+data = autoplothapi(ba,Nc); % Data is a matrix
 break
 % Note that the fast binary served from the above server have the ordinal
 % time and time unit in the first 21 bytes of the file. The fast csv file
