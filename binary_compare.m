@@ -32,6 +32,14 @@ whos ba
 
 Nc = 2; % Number of columns
 data = autoplothapi(ba,Nc); % Data is a matrix
+
+dataset = 'TestData'
+server = base
+parameters = 'scalar,vector'
+data = autoplothapi(server, dataset, parameters, start, stop)
+data.Time   % 86400x1 matrix
+data.scalar % 86400x1 matrix
+data.vector % 86400x3 matrix
 break
 % Note that the fast binary served from the above server have the ordinal
 % time and time unit in the first 21 bytes of the file. The fast csv file
