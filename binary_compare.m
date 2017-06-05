@@ -30,7 +30,7 @@ urlwrite([base,'/data/?id=TestData&parameters=',file,'int','&time.min=1970-01-01
 figure(1);clf;hold on;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Read and plot csv
+% Read and HAPI csv
 tic
 fid = fopen([file,'.csv'],'r');
 str = fscanf(fid,'%c');
@@ -49,12 +49,12 @@ datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Read and plot fast csv
+% Read and plot fast CSV
 tic
 datafcsv = load([file,'.fcsv']);
 datafcsv(:,1) = datafcsv(:,1)/86400 + datenum(1970,1,1);
 tfcsv = toc;
-fprintf('fcsv total:        %.4fs\t# Proposed CSV\n',tfcsv);
+fprintf('fcsv total:        %.4fs\t# Proposed fast CSV\n',tfcsv);
 
 figure(1);
 plot(datafcsv(:,1),datafcsv(:,2),'b'); % Plot first data column
@@ -90,7 +90,7 @@ zerotime = datenum(head(2:end)','yyyy-mm-ddTHH:MM:SS');
 f = 10^(3*str2num(head(1)));
 datafbin1(:,1) =  zerotime + datafbin1(:,1)/(86400*f);
 tfbin1 = toc;
-fprintf('fbin total:        %.04fs\t# Proposed binary (time and parameter doubles)\n',tfbin1);
+fprintf('fbin total:        %.04fs\t# Proposed binary (both doubles)\n',tfbin1);
 
 figure(1);
 plot(datafbin1(:,1),datafbin1(:,2),'m'); % Plot first data column
@@ -111,7 +111,7 @@ zerotime = datenum(head(2:end)','yyyy-mm-ddTHH:MM:SS');
 f = 10^(3*str2num(head(1)));
 timefbin2(:,1) =  zerotime + timefbin2/(86400*f);
 tfbin2 = toc;
-fprintf('fbin w/ints total: %.4fs\t# Proposed binary (time is double, parameter is integer)\n',tfbin2);
+fprintf('fbin w/ints total: %.4fs\t# Proposed binary (time dbl, param int)\n',tfbin2);
 
 figure(1)
 plot(timefbin2,datafbin2/1000,'g'); % Plot first data column

@@ -4,25 +4,40 @@
 sn = 3; % Server number in servers.txt
 dn = 1; % Dataset number from first server
 
-Servers = hapi();
+% Default parameters
+opts = struct('update_script',0,'logging',0,...
+              'cache_mlbin',1,'cache_hapi',1,...
+              'use_cache',1,'format','fbinary');
+
+% List servers to console
+hapi();
+% or
+% hapi(opts)
+
+% Get server list
+Servers = hapi(); 
+% or
+% Servers = hapi(opts)
 
 % List datasets from second server in list
 hapi(Servers{sn}); 
 % or
 % hapi(Servers{sn},opts); 
 
-% MATLAB structure of JSON dataset list
+% Get structure of datasets from server sn
 metad = hapi(Servers{sn}); 
 % or 
 % metad = hapi(Servers{sn},opts)
 
-% MATLAB structure of JSON parameter list
+% Get structure of all parameters in dataset dn
 metap = hapi(Servers{sn}, metad.catalog{dn}.id);
 % or
-% metap = hapi(Servers{sn},ids{dn},opts);
+% metap = hapi(Servers{sn},metad.catalog{dn}.id,opts);
 
-% MATLAB structure of reduced JSON parameter list
+% Get structure of first parameter in dataset dn
 metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{2}.name);
+% or
+% metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{2}.name, opts);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
