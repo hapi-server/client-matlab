@@ -23,7 +23,7 @@ if (0)
     urlwrite([base,'/data/?id=TestData&parameters=',file,'int','&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],[file,'int.fbin']);
 end
 
-% Note that the "fast" binary served from the above server have the ordinal
+% Note that the fast binary served from the above server have the ordinal
 % time and time unit in the first 21 bytes of the file. The fast csv file
 % is assumed to start at an arbitrary ordinal time. The results will not 
 % change when this information is moved to the response from a /info
