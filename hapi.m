@@ -28,7 +28,7 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %
 %       update_script (default true) - Use newer hapi.m if found.
 %       logging (default false) - Log to console.
-%       cache_files (default true) - Save files in hapi-data.
+%       cache_hapi (default true) - Save files in hapi-data.
 %       use_cache (default true) - Use cache file if found.
 %       serverlist (default https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt)
 %   
@@ -36,8 +36,8 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %       OPTS = struct();
 %       OPTS.updatescript = 0;
 %       OPTS.logging      = 1;
-%       OPTS.cache_files  = 0;
-%       OPTS.usecache     = 0;
+%       OPTS.cache_hapi   = 0;
+%       OPTS.use_cache    = 0;
 %       HAPI(...,OPTS)
 %
 %   This is a command-line only interface.  For a GUI for browsing catalogs
@@ -66,16 +66,15 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %
 % Implemented
 DOPTS = struct();
-DOPTS.update_script = 1;
+DOPTS.update_script = 0;
 DOPTS.logging       = 0;
 DOPTS.cache_mlbin   = 1; % Save data requested in MATLAB binary for off-line use.
 DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) for debugging/sharing.
 DOPTS.use_cache     = 1; % Use cached MATLAB binary file associated with request if its exists.
-DOPTS.use_binary    = 1; % Use binary transport.
+DOPTS.use_binary    = 0; % Will be removed.
 
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
-
 
 % TODO: These are not implemented.
 %DOPTS.split_long    = 0; % Split long requests into chunks and fetch chunks.
@@ -150,7 +149,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Shameless plug
-if nin > 0
+if nin > 0 && DOPTS.logging
     if ~isempty(strmatch('http://tsds.org/',SERVER))
         fprintf('See <a href="http://tsds.org/get/">http://tsds.org/get/</a> to explore catalog datasets.\n');
     end
@@ -167,11 +166,11 @@ if (nin == 1)
     
     if (DOPTS.logging || nargout == 0),fprintf('Available datasets from %s:\n',SERVER);end
 
-    if isstruct(data.catalog) % Make data.catalog cell array of structs.
+    if isstruct(data.catalog) 
+        % Make data.catalog cell array of structs.
         % Why is data.catalog a struct array instead of
         % a cell array of structs like data.parameters?
         % Perhaps when JSON array has objects with only one key?
-        % This fixes.
         ids = {data.catalog.id};
         for i = 1:length(ids)
            tmp{i} = struct('id',ids{i});
@@ -229,9 +228,9 @@ if (nin == 3 || nin == 5)
                             regexprep(START,'-|:\.|Z',''),...
                             regexprep(STOP,'-|:|\.|Z',''));
             fnamecsv  = [urld,filesep(),fname,'.csv'];
-            fnamemat  = [urld,filesep(),fname,'.mat'];
             fnamebin  = [urld,filesep(),fname,'.bin'];
             fnamefbin = [urld,filesep(),fname,'.fbin'];
+            fnamemat  = [urld,filesep(),fname,'.mat'];
             urlcsv  = [SERVER,'/data?id=',DATASET,'&parameters=',PARAMETERS,'&time.min=',START,'&time.max=',STOP];
             urlfbin = [urlcsv,'&format=fbinary'];
             urlbin  = [urlcsv,'&format=binary'];
@@ -239,6 +238,14 @@ if (nin == 3 || nin == 5)
         urljson = [SERVER,'/info?id=',DATASET,'&parameters=',PARAMETERS];
         fnamejson = sprintf('%s_%s',DATASET,regexprep(PARAMETERS,',','-'));
         fnamejson = [urld,filesep(),fnamejson,'.json'];
+    end
+
+    if (DOPTS.use_cache) && nin == 5
+        if exist(fnamemat,'file')
+            if (DOPTS.logging) fprintf('Reading %s ... ',fnamemat);end
+                load(fnamemat);
+            if (DOPTS.logging) fprintf('Done.\n');end
+        end
     end
 
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi)
@@ -254,28 +261,23 @@ if (nin == 3 || nin == 5)
 	opts = weboptions('ContentType', 'json');
     meta = webread(urljson,opts);
     if (DOPTS.logging) fprintf('Done.\n');end
+    if (nin == 3)
+        data = meta
+        return
+    end
 
     if (DOPTS.cache_hapi)
         % Ideally meta variable would be serialized meta to JSON, so second
-        % request is not needed, but this is not simple to do.
+        % request is not needed, but serialization is not simple to do.
+        % TODO: Look at code for webread() to find out what
+        % undocumented function is used to convert JSON to MATLAB
+        % structure.  Then use urlread() instead of webread() above 
+        % so the following request is not needed.
         urlwrite(urljson,fnamejson);
         if (DOPTS.logging) fprintf('Wrote %s ...\n',fnamejson);end
     end
 
-    if nin == 3
-        data = meta;
-        return
-    end
-    
-    if (DOPTS.use_cache)
-        if exist(fnamemat,'file')
-            if (DOPTS.logging) fprintf('Reading %s ... ',fnamemat);end
-            load(fnamemat);
-            if (DOPTS.logging) fprintf('Done.\n');end
-            return
-        end
-    end
-    
+        
     if (DOPTS.use_binary)
         % Determine if server supports binary
         url = [SERVER,'/capabilities'];
@@ -290,32 +292,40 @@ if (nin == 3 || nin == 5)
     end
 
     if (DOPTS.use_binary)
-        if (DOPTS.cache_hapi)
-            if (DOPTS.logging) fprintf('Downloading %s ... ',urlfbin);end
-            urlwrite(urlfbin,fnamefbin);
-            if (DOPTS.logging) fprintf('Done.\n');end
-            if (DOPTS.logging) fprintf('Reading %s ... ',fnamefbin);end
-            fid = fopen(fnamefbin);
-            p = char(fread(fid,21,'uint8=>char'));
-            n = str2num(p(1));
-            data = fread(fid,'double'); % TODO: Account for mixed types
-            fclose(fid);
-            if (DOPTS.logging) fprintf('Done.\n');end
-            size = 1 + meta.parameters{2}.size;
-            data = reshape(data,size,length(data)/size)';
-            zerotime = p(2:end)';
-            data(:,1) = datenum(zerotime,'yyyy-mm-ddTHH:MM:SS') + data(:,1)/(86400*10^(3*n));
-        end
-
-        if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
-        save(fnamemat,'urlfbin','data','meta');
+        % TODO: Account for mixed types?  But can't have single array
+        % with integer and doubles.  
+        if (DOPTS.logging) fprintf('Downloading %s ... ',urlfbin);end
+        % Fastest if downloaded to file then read insted of read into 
+        % memory directly.
+        urlwrite(urlfbin,fnamefbin);
         if (DOPTS.logging) fprintf('Done.\n');end
+        if (DOPTS.logging) fprintf('Reading %s ... ',fnamefbin);end
+        fid = fopen(fnamefbin);
+        p = char(fread(fid,21,'uint8=>char'));
+        n = str2num(p(1));
+        data = fread(fid,'double'); 
+        fclose(fid);
+        if (DOPTS.logging) fprintf('Done.\n');end
+        size = 1 + meta.parameters{2}.size;
+        data = reshape(data,size,length(data)/size)';
+        zerotime = p(2:end)';
+        data(:,1) = datenum(zerotime,'yyyy-mm-ddTHH:MM:SS') + data(:,1)/(86400*10^(3*n));
+
+        if ~DOPTS.cache_hapi
+            rmfile(fnamefbin);
+        end
+        if (DOPTS.cache_mlbin)
+            if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
+            save(fnamemat,'urlfbin','data','meta');
+            if (DOPTS.logging) fprintf('Done.\n');end
+        end
         return;
     end
     
     try
         if (DOPTS.cache_hapi)
             if (DOPTS.logging) fprintf('Downloading %s ... ',urlcsv);end
+            % Save to file and read file
             urlwrite(urlcsv,fnamecsv);
             if (DOPTS.logging) fprintf('Done.\n');end
             if (DOPTS.logging) fprintf('Reading %s ... ',fnamecsv);end
@@ -325,6 +335,7 @@ if (nin == 3 || nin == 5)
             if (DOPTS.logging) fprintf('Done.\n');end
         else
             if (DOPTS.logging) fprintf('Reading %s ... ',urlcsv);end
+            % Read into memory directly.
             str = urlread(urlcsv);
             if (DOPTS.logging) fprintf('Done.\n');end
         end
@@ -335,30 +346,34 @@ if (nin == 3 || nin == 5)
     timelen = meta.parameters{1}.length;
     if (timelen == 23 || timelen == 24)
         if (DOPTS.logging) fprintf('Fast parsing %s ... ',fnamecsv);end
-        
-        % TODO: Write code for other time lengths.
-        % TODO: Check that no other variables are strings
-
-        if (timelen == 23)
-            % Test cases
-            %str = sprintf('2012-02-01T00:00:00.000Z,1,2\n2012-02-01T00:00:00.000Z,1,2\n');
-            %str = sprintf('2012-02-01T00:00:00.0000,1,2\n2012-02-01T00:00:00.0000,1,2\n');
-            patm = '(^|\n)([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9]{0,3})Z*,';
-            patr = '$1$2,$3,$4,$5,$6,$7.$8,';
+        % TODO: Check that no other variables are strings.  If any, drop
+        % to slow mode.
+        % TODO: return structure data.Time, data.Parameter1, etc.
+        size = 0;
+        for i = 2:length(meta.parameters)
+            size = size + meta.parameters{i}.size;
         end
-        if (timelen == 24)
-            % Test cases
-            %str = sprintf('2012-02-01T00:00:00.00Z,1,2\n2012-02-01T00:00:00.00Z,1,2\n');
-            %str = sprintf('2012-02-01T00:00:00.000,1,2\n2012-02-01T00:00:00.000,1,2\n');
-            patm = '(^|\n)([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9]{0,3})Z*,';
-            patr = '$1$2,$3,$4,$5,$6,$7.$8,';
+        nd = repmat('%f ',1,size);
+        % TODO: Handle alternative time respresentations that are allowed:
+        % Truncated time and YYYY-DD.
+        if strmatch(str(24),'Z')
+            % For now, to get things working.
+            format = ['%4d-%2d-%2dT%2d:%2d:%2d.%3dZ ',nd];
+        else
+            format = ['%4d-%2d-%2dT%2d:%2d:%2d.%3d ',nd];
         end
-        str = regexprep(str,patm,patr);
-        data = str2num(str);
-        data = [datenum(data(:,1:6)),data(:,7:end)];
+        fid = fopen(fnamecsv,'r');
+        A = textscan(fid,format,'Delimiter',',','CollectOutput',true);
+        fclose(fid);
+        A{1} = double(A{1});
+        A{1}(:,6) = A{1}(:,6) + A{1}(:,7)/1000;
+        data(:,1) = datenum(A{1}(:,1:6));
+        data = [data,A{2}];
+        datestr(data(1:10,1),'yyyy-mm-ddTHH:MM:SS.FFF');
         if (DOPTS.logging) fprintf('Done.\n');end
     else
-        % Slow method.  Iterate over each line. Assumes no string columns.
+        % Slow method.  Iterate over each line.
+        % TODO: Hanlde string columns.
         if (DOPTS.logging) fprintf('Slow parsing %s ... ',fnamecsv);end
         datas = strread(str,'%s','delimiter',sprintf('\n'));
         for i = 1:length(datas)
@@ -376,6 +391,15 @@ if (nin == 3 || nin == 5)
         end
         if (DOPTS.logging) fprintf('Done.\n');end
     end
+
+    meta.x_server = SERVER;
+    meta.x_dataset = DATASET;
+    meta.x_requestURL = urlcsv;
+    meta.x_requestFile = fnamecsv;
+    meta.x_requestFormat = 'csv';
+    meta.x_request_parameters = PARAMETERS;
+    meta.x_request_time_min = START;
+    meta.x_request_time_max = STOP;
 
     if (DOPTS.cache_mlbin)
         if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
