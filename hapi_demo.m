@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Download hapiplot.m if not found.
 if exist('hapiplot','file') ~= 2
@@ -31,9 +30,6 @@ hapiplot(data,meta)
 break
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-=======
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
->>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
 % Scalar time series example
 
 server     = 'http://tsds.org/get/SSCWeb/hapi';
@@ -66,11 +62,6 @@ opts       = struct('logging',1,'use_cache',0);
 hapiplot(meta,data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-<<<<<<< HEAD
-=======
-break
-
->>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata request examples
 sn = 3; % Server number in servers.txt

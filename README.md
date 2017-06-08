@@ -10,8 +10,6 @@ help hapi
 
 Or, download [the package](https://github.com/hapi-server/matlab-client/archive/master.zip).
 
-```hapi.m``` automatically updates itself if a newer version is found in [the repository](https://github.com/hapi-server/matlab-client/).  See ```help hapi``` to turn of automatic updates.
-
 ## Examples
 
 Example usage is given in [hapi_demo.m](https://github.com/hapi-server/matlab-client/hapi_demo.m)
@@ -29,8 +27,6 @@ hapi_demo % Execute hapi_demo script
 ```bash
 git clone https://github.com/hapi-server/matlab-client.git
 ```
-
-and set `OPTS.update_script = 0` in `hapi.m`.  Unset before committing changes.
 
 ## Contact
 

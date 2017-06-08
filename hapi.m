@@ -148,19 +148,10 @@ if (nin == 0)
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-<<<<<<< HEAD
 % TODO: Get this from servers.json
 keys = {'http://datashop.elasticbeanstalk.com/hapi','http://tsds.org/get/SSCWeb/hapi','http://mag.gmu.edu/TestData/hapi'};
 vals = {'DataShop','SSCWeb','TestData'};
 smap = containers.Map(keys,vals);
-=======
-% Shameless plug
-if nin > 0 && DOPTS.logging
-    if ~isempty(strmatch('http://tsds.org/',SERVER))
-        fprintf('See <a href="http://tsds.org/get/">http://tsds.org/get/</a> to explore catalog datasets.\n');
-    end
-end
->>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Datasets
@@ -359,7 +350,6 @@ if (nin == 3 || nin == 5)
             if (DOPTS.logging) fprintf('Done.\n');end
         end
 
-<<<<<<< HEAD
         % timelen = number of characters in time string + 1 (for null)
         timelen = meta.parameters{1}.length;
         % TODO: Handle alternative time respresentations that are allowed:
@@ -387,51 +377,6 @@ if (nin == 3 || nin == 5)
             if any(strcmp(ptype{i-1},{'isotime','string'}))
                 plength{i-1}  = meta.parameters{i}.length;
                 rformat = [rformat,sprintf('%d%%c',1,plength{i-1})];
-=======
-    timelen = meta.parameters{1}.length;
-    if (timelen == 23 || timelen == 24)
-        if (DOPTS.logging) fprintf('Fast parsing %s ... ',fnamecsv);end
-        % TODO: Check that no other variables are strings.  If any, drop
-        % to slow mode.
-        % TODO: return structure data.Time, data.Parameter1, etc.
-        size = 0;
-        for i = 2:length(meta.parameters)
-            size = size + meta.parameters{i}.size;
-        end
-        nd = repmat('%f ',1,size);
-        % TODO: Handle alternative time respresentations that are allowed:
-        % Truncated time and YYYY-DD.
-        if strmatch(str(24),'Z')
-            % For now, to get things working.
-            format = ['%4d-%2d-%2dT%2d:%2d:%2d.%3dZ ',nd];
-        else
-            format = ['%4d-%2d-%2dT%2d:%2d:%2d.%3d ',nd];
-        end
-        fid = fopen(fnamecsv,'r');
-        A = textscan(fid,format,'Delimiter',',','CollectOutput',true);
-        fclose(fid);
-        A{1} = double(A{1});
-        A{1}(:,6) = A{1}(:,6) + A{1}(:,7)/1000;
-        data(:,1) = datenum(A{1}(:,1:6));
-        data = [data,A{2}];
-        datestr(data(1:10,1),'yyyy-mm-ddTHH:MM:SS.FFF');
-        if (DOPTS.logging) fprintf('Done.\n');end
-    else
-        % Slow method.  Iterate over each line.
-        % TODO: Hanlde string columns.
-        if (DOPTS.logging) fprintf('Slow parsing %s ... ',fnamecsv);end
-        datas = strread(str,'%s','delimiter',sprintf('\n'));
-        for i = 1:length(datas)
-            line = strsplit(datas{i},',');
-            time = regexprep(line(1),'Z.*','');
-            % TODO: Need to handle non-full versions of ISO time, e.g.,
-            % YYYY-mm-ddTHH, etc.
-            time = datenum(time,'yyyy-mm-ddTHH:MM:SS');
-            try
-                tmp = cellfun(@str2num,line(2:end),'Uniform',1);
-            catch
-                error('Problem with line %d:\n%s',i,datas{i});
->>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
             end
         end
         
@@ -466,22 +411,11 @@ if (nin == 3 || nin == 5)
 
     end
 
-<<<<<<< HEAD
     meta.x_.server     = SERVER;
     meta.x_.dataset    = DATASET;
     meta.x_.parameters = PARAMETERS;
     meta.x_.time_min   = START;
     meta.x_.time_max   = STOP;
-=======
-    meta.x_server = SERVER;
-    meta.x_dataset = DATASET;
-    meta.x_requestURL = urlcsv;
-    meta.x_requestFile = fnamecsv;
-    meta.x_requestFormat = 'csv';
-    meta.x_request_parameters = PARAMETERS;
-    meta.x_request_time_min = START;
-    meta.x_request_time_max = STOP;
->>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
 
     if (DOPTS.cache_mlbin)
         if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
