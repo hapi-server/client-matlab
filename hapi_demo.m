@@ -1,3 +1,5 @@
+clear;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Download hapiplot.m if not found.
 if exist('hapiplot','file') ~= 2
@@ -5,6 +7,25 @@ if exist('hapiplot','file') ~= 2
     urlwrite(u,'hapi.m');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+format = 'csv';
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Scalar and vector example
+%server     = 'http://mag.gmu.edu/TestData/hapi';
+server     = 'http://localhost:8999/hapi';
+dataset    = 'TestData';
+parameters = 'scalar,scalarcats';
+start      = '1970-01-01';
+stop       = '1970-01-01T00:00:10';
+opts       = struct('format',format,'logging',1,'use_cache',0);
+
+
+[data,meta] = hapi(server, dataset, parameters, start, stop, opts);
+
+hapiplot(data,meta)
+
+break
 
 format = 'csv';
 

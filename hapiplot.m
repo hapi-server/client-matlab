@@ -5,10 +5,12 @@ function hapiplot(data,meta,pn)
 %
 %   HAPIPLOT(meta,data,pn) Plots only parameter number pn
 
-nf = length(meta.parameters);
-if nargin < 3 && nf > 2 % First parameter is Time.
-    for i = 1:nf-1
+np = length(meta.parameters) - 1; % Number of parameters (excluding Time)
+if nargin < 3
+    for i = 1:np
         hapiplot(data,meta,i);
+        % MATLAB passes by value, so delete data after passed.
+        rmfield(data,meta.parameters{i}.name);
     end
     return;
 end
@@ -43,7 +45,16 @@ if strcmp(units,'null')
     units = '';
 end
 
-yfill  = str2num(meta.parameters{pn+1}.fill);  % Parameter fill
+if isfield(meta.parameters{pn+1},'fill')
+    if strcmp(lower(meta.parameters{pn+1}.fill),'nan')
+        yfill = NaN
+    else
+        yfill = str2double(meta.parameters{pn+1}.fill);  % Parameter fill
+        if isnan(yfill),yfill = 'null';,end
+    end
+else
+    yfill = 'null';
+end
 if ~strcmp(yfill,'null')
     % Replace fills with NaN for plotting
     % (so gaps showns in lines for time series)
@@ -83,8 +94,35 @@ set(th,'Interpreter','none','FontWeight','normal');
 if ~isfield(meta.parameters{pn+1},'bins')
     % Plot parameter as one or more time series
     
-    ph = plot(time,y,'LineWidth',2);
-
+    ptype = meta.parameters{pn+1}.type;
+    if strcmp(ptype,'string')
+        [ustrs,ia,ib] = unique(y,'rows');
+        y = ib;
+        set(gca,'YTick',[1:length(ia)]);
+        set(gca,'YTickLabel',ustrs);
+        legend(meta.parameters{pn+1}.description);
+    end
+    
+    if isfield(meta.parameters{pn+1},'categorymap')
+        categorymap = meta.parameters{pn+1}.categorymap;
+        pfields = fieldnames(categorymap);
+        for i = 1:length(pfields)
+            pfieldvals(i) = getfield(categorymap,pfields{i});
+        end
+        [yt,I] = sort(pfieldvals);
+        set(gca,'YTick',yt);
+        set(gca,'YTickLabel',pfields);        
+    end
+    if size(y,1) < 11
+        props = {'LineStyle','none','Marker','.','MarkerSize',30};
+    elseif size(y,1) < 101
+        props = {'LineStyle','-','LineWidth',2,'Marker','.','MarkerSize',15};
+    else
+        props = {};
+    end
+    
+    ph = plot(time,y,props{:});
+    
     % Auto label x-axis based on time value
     datetick; 
     grid on;

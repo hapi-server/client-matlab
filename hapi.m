@@ -364,10 +364,22 @@ if (nin == 3 || nin == 5)
             twformat = '%4d-%02d-%02dT%02d:%02d:%02d.%03d';
         end
 
+        ntc     = 7; % Number of time columns
+        lcol(1) = ntc; % Last time column. (TODO: Compute in general based on timeformat.)
         for i = 2:length(meta.parameters) % 1 corresponds to time.
-            psize(i-1)  = meta.parameters{i}.size;
+            if isfield(meta.parameters{i},'size')
+                psize(i-1)  = meta.parameters{i}.size;
+            end
             pnames{i-1} = meta.parameters{i}.name;
             ptype{i-1}  = meta.parameters{i}.type;
+            psize(i-1)  = 1;
+            if isfield(meta.parameters{i},'size')
+                psize(i-1) = meta.parameters{i}.size;
+            end
+            if i == 2,a = ntc;,else,a = lcol(i-2);,end
+            fcol(i-1) = a + 1; % First column of parameter
+            lcol(i-1) = fcol(i-1)+psize(i-1)-1; % Last column of parameter
+
             if strcmp(ptype{i-1},'integer')
                 rformat = [rformat,repmat('%d ',1,psize(i-1))];
             end
@@ -375,8 +387,9 @@ if (nin == 3 || nin == 5)
                 rformat = [rformat,repmat('%f ',1,psize(i-1))];
             end
             if any(strcmp(ptype{i-1},{'isotime','string'}))
-                plength{i-1}  = meta.parameters{i}.length;
-                rformat = [rformat,sprintf('%d%%c',1,plength{i-1})];
+                plength{i-1}  = meta.parameters{i}.length - 1;
+                % Only handles scalar string parameters
+                rformat = [rformat,'%',num2str(plength{i-1}),'c'];
             end
         end
         
@@ -384,12 +397,12 @@ if (nin == 3 || nin == 5)
         
         %tic
         fid = fopen(fnamecsv,'r');
-        A = textscan(fid,rformat,'Delimiter',',','CollectOutput',true);
+        A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
 
         % Compute time strings (using a rformat with time conversion
         % specifications is slower - see format_compare.m)
-        DTVec     = A{1}'; % Yr,Mo,Dy,Hr,Mn,Sc,Ms, ... matrix.
+        DTVec     = transpose(cat(2,A{1:ntc})); % Yr,Mo,Dy,Hr,Mn,Sc,Ms, ... matrix.
         
         % Should we even return this?  Probably won't be used.
         % Doubles parse time.
@@ -400,7 +413,8 @@ if (nin == 3 || nin == 5)
         data      = setfield(data,'Time',Time);
         data      = setfield(data,'DateTimeVector',DTVec');
         for i = 1:length(pnames)
-            data = setfield(data,pnames{i},A{i+1});
+            pdata = cat(2,A{fcol(i):lcol(i)});
+            data  = setfield(data,pnames{i},pdata);
         end
 
         meta.x_.format    = 'csv';
