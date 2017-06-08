@@ -148,23 +148,37 @@ if (nin == 0)
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+<<<<<<< HEAD
+% TODO: Get this from servers.json
+keys = {'http://datashop.elasticbeanstalk.com/hapi','http://tsds.org/get/SSCWeb/hapi','http://mag.gmu.edu/TestData/hapi'};
+vals = {'DataShop','SSCWeb','TestData'};
+smap = containers.Map(keys,vals);
+=======
 % Shameless plug
 if nin > 0 && DOPTS.logging
     if ~isempty(strmatch('http://tsds.org/',SERVER))
         fprintf('See <a href="http://tsds.org/get/">http://tsds.org/get/</a> to explore catalog datasets.\n');
     end
 end
+>>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Datasets
 if (nin == 1)
+
+    if isKey(smap,SERVER)
+        catalog = smap(SERVER);
+        turl = sprintf('http://tsds.org/get/#catalog=%s',catalog);
+        fprintf('See the interface at <a href="%s">%s</a>\nto search and explore datasets from the <a href="%s">%s</a> HAPI Server.\n',turl,turl,SERVER,catalog);
+    end
+
     url = [SERVER,'/catalog/'];
     if (DOPTS.logging),fprintf('Reading %s ... ',url);end
 
     opts = weboptions('ContentType', 'json');
     data = webread(url,opts);
     
-    if (DOPTS.logging || nargout == 0),fprintf('Available datasets from %s:\n',SERVER);end
+    if (DOPTS.logging || nargout == 0),fprintf('\nAvailable datasets from %s:\n',SERVER);end
 
     if isstruct(data.catalog) 
         % Make data.catalog cell array of structs.
@@ -189,6 +203,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parameters
 if (nin == 2)
+
+    if isKey(smap,SERVER)
+        catalog = smap(SERVER);
+        turl = sprintf('http://tsds.org/get/#catalog=%s&dataset=%s',catalog,DATASET);
+        fprintf('See the interface at <a href="%s">%s</a>\nto search and explore parameters in this dataset from the <a href="%s">%s</a> HAPI Server.\n',turl,turl,SERVER,catalog);
+    end
+
     url = [SERVER,'/info?id=',DATASET];
 
     if (DOPTS.logging) fprintf('Downloading %s ... ',url);end
@@ -217,6 +238,8 @@ end
 % Data
 
 if (nin == 3 || nin == 5)
+
+    meta.x_ = struct();
 
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi || DOPTS.use_cache)
         urld = regexprep(SERVER,'https*://(.*)','$1');
@@ -277,7 +300,6 @@ if (nin == 3 || nin == 5)
         if (DOPTS.logging) fprintf('Wrote %s ...\n',fnamejson);end
     end
 
-        
     if (DOPTS.use_binary)
         % Determine if server supports binary
         url = [SERVER,'/capabilities'];
@@ -314,15 +336,12 @@ if (nin == 3 || nin == 5)
         if ~DOPTS.cache_hapi
             rmfile(fnamefbin);
         end
-        if (DOPTS.cache_mlbin)
-            if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
-            save(fnamemat,'urlfbin','data','meta');
-            if (DOPTS.logging) fprintf('Done.\n');end
-        end
-        return;
-    end
-    
-    try
+        
+        meta.x_.format    = 'csv';
+        meta.x_.url       = urlbin;
+        meta.x_.cachefile = fnamebin;
+        
+    else
         if (DOPTS.cache_hapi)
             if (DOPTS.logging) fprintf('Downloading %s ... ',urlcsv);end
             % Save to file and read file
@@ -339,10 +358,36 @@ if (nin == 3 || nin == 5)
             str = urlread(urlcsv);
             if (DOPTS.logging) fprintf('Done.\n');end
         end
-    catch
-        error('\nError when attempting to fetch %s\n',urlcsv);
-    end
 
+<<<<<<< HEAD
+        % timelen = number of characters in time string + 1 (for null)
+        timelen = meta.parameters{1}.length;
+        % TODO: Handle alternative time respresentations that are allowed:
+        % Truncated time and YYYY-DD.  Determine format from regex.
+        if strmatch(str(timelen-1),'Z') % Last char is Z
+            % Read format string
+            rformat  = '%4d-%2d-%2dT%2d:%2d:%2d.%3dZ ';
+            % Time write format string
+            twformat = '%4d-%02d-%02dT%02d:%02d:%02d.%03dZ';
+        else
+            rformat  = '%4d-%2d-%2dT%2d:%2d:%2d.%3d ';
+            twformat = '%4d-%02d-%02dT%02d:%02d:%02d.%03d';
+        end
+
+        for i = 2:length(meta.parameters) % 1 corresponds to time.
+            psize(i-1)  = meta.parameters{i}.size;
+            pnames{i-1} = meta.parameters{i}.name;
+            ptype{i-1}  = meta.parameters{i}.type;
+            if strcmp(ptype{i-1},'integer')
+                rformat = [rformat,repmat('%d ',1,psize(i-1))];
+            end
+            if strcmp(ptype{i-1},'double')
+                rformat = [rformat,repmat('%f ',1,psize(i-1))];
+            end
+            if any(strcmp(ptype{i-1},{'isotime','string'}))
+                plength{i-1}  = meta.parameters{i}.length;
+                rformat = [rformat,sprintf('%d%%c',1,plength{i-1})];
+=======
     timelen = meta.parameters{1}.length;
     if (timelen == 23 || timelen == 24)
         if (DOPTS.logging) fprintf('Fast parsing %s ... ',fnamecsv);end
@@ -386,12 +431,48 @@ if (nin == 3 || nin == 5)
                 tmp = cellfun(@str2num,line(2:end),'Uniform',1);
             catch
                 error('Problem with line %d:\n%s',i,datas{i});
+>>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
             end
-            data(i,:) = [time,tmp];
         end
+        
+        if (DOPTS.logging) fprintf('Parsing %s ... ',fnamecsv);end
+        
+        %tic
+        fid = fopen(fnamecsv,'r');
+        A = textscan(fid,rformat,'Delimiter',',','CollectOutput',true);
+        fclose(fid);
+
+        % Compute time strings (using a rformat with time conversion
+        % specifications is slower - see format_compare.m)
+        DTVec     = A{1}'; % Yr,Mo,Dy,Hr,Mn,Sc,Ms, ... matrix.
+        
+        % Should we even return this?  Probably won't be used.
+        % Doubles parse time.
+        Time      = sprintf(twformat,DTVec(:)); % datestr is too slow
+        Time      = reshape(Time,timelen-1,length(Time)/(timelen-1))';
+
+        data      = struct();
+        data      = setfield(data,'Time',Time);
+        data      = setfield(data,'DateTimeVector',DTVec');
+        for i = 1:length(pnames)
+            data = setfield(data,pnames{i},A{i+1});
+        end
+
+        meta.x_.format    = 'csv';
+        meta.x_.url       = urlcsv;
+        meta.x_.cachefile = fnamecsv;
+
         if (DOPTS.logging) fprintf('Done.\n');end
+
     end
 
+<<<<<<< HEAD
+    meta.x_.server     = SERVER;
+    meta.x_.dataset    = DATASET;
+    meta.x_.parameters = PARAMETERS;
+    meta.x_.time_min   = START;
+    meta.x_.time_max   = STOP;
+=======
     meta.x_server = SERVER;
     meta.x_dataset = DATASET;
     meta.x_requestURL = urlcsv;
@@ -400,6 +481,7 @@ if (nin == 3 || nin == 5)
     meta.x_request_parameters = PARAMETERS;
     meta.x_request_time_min = START;
     meta.x_request_time_max = STOP;
+>>>>>>> b2197f596fe8712a7f4a868ea0f44d0d0669015c
 
     if (DOPTS.cache_mlbin)
         if (DOPTS.logging) fprintf('Saving %s ... ',fnamemat);end
@@ -407,5 +489,4 @@ if (nin == 3 || nin == 5)
         if (DOPTS.logging) fprintf('Done.\n');end
     end
 
-    return;
 end
