@@ -1,8 +1,8 @@
 clear
 
 % Test server of HAPI CSV and binary and the "Fast" CSV and binary.
-%base = 'http://localhost:8999/hapi';
-base = 'http://mag.gmu.edu/TestData/hapi';
+base = 'http://localhost:8999/hapi';
+%base = 'http://mag.gmu.edu/TestData/hapi';
 
 % Choose data type (speed-up is not very dependent on which is used).
 % Would get n from size from /info
@@ -37,12 +37,6 @@ if ~exist(filefbin2,'file')
     % Download fast binary; time is double, parameter is integer
     urlwrite([base,'/data/?id=TestData&parameters=',file,'int','&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],filefbin2);
 end
-
-% Note that the fast binary served from the above server have the ordinal
-% time and time unit in the first 21 bytes of the file. The fast csv file
-% is assumed to start at an arbitrary ordinal time. The results will not 
-% change when this information is moved to the response from a /info
-% request for the parameter.
 
 figure(1);clf;hold on;
 
@@ -80,7 +74,7 @@ drawnow;datetick;
 tic
 fid = fopen(filecsv,'r');
 format = '%{uuuu-MM-dd''T''HH:mm:ss.SSS}D %f';
-datacsv1 = readtable([file,'.csv'],'Delimiter',',','Format',format,'ReadVariableNames',false);
+datacsv1 = readtable(filecsv,'Delimiter',',','Format',format,'ReadVariableNames',false);
 datacsv1.Var1 = datenum(datacsv1.Var1);
 tcsv(1) = toc;
 fprintf('csv (readtbl/tfmt)  %.4fs\t# HAPI CSV\n',tcsv(1));
@@ -141,17 +135,17 @@ plot(datacsv4(:,1),datacsv4(:,2),'b');
 drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % "Fast" binary file containing all doubles
 tic
 fid = fopen(filefbin,'r');
-head = char(fread(fid,21,'uint8=>char'));
 datafbin1 = fread(fid,'double');
 fclose(fid);
 datafbin1 = reshape(datafbin1,n+1,length(datafbin1)/(n+1))';
-zerotime  = datenum(head(2:end)','yyyy-mm-ddTHH:MM:SS');
-f = 10^(3*str2num(head(1)));
-datafbin1(:,1) =  zerotime + datafbin1(:,1)/(86400*f);
+zerotime  = datenum('1970-01-01','yyyy-mm-dd');
+datafbin1(:,1) =  zerotime + datafbin1(:,1)/(86400);
 tfbin(1) = toc;
 fprintf('fbin (fread)        %.04fs\t# "Fast" binary (both doubles)\n',tfbin(1));
 
@@ -161,15 +155,12 @@ drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Fast" binary 
+% "Fast" binary file containing all doubles
 tic
-fid = fopen(filefbin,'r');
-head = char(fread(fid,21,'uint8=>char'));
-fclose(fid);
-zerotime  = datenum(head(2:end)','yyyy-mm-ddTHH:MM:SS');
-m = memmapfile([file,'.fbin'], 'Offset',21,'Format','double');
+m = memmapfile(filefbin,'Format','double');
 datafbin2 = reshape(m.Data,2,length(m.Data)/(2))';
-datafbin2(:,1) = datafbin2(:,1)/86400 + zerotime;
+zerotime  = datenum('1970-01-01','yyyy-mm-dd');
+datafbin2(:,1) = zerotime + datafbin2(:,1)/86400;
 tfbin(2) = toc;
 fprintf('fbin (mmap)         %.4fs\t# "Fast" binary (both doubles)\n',tfbin(2));
 
@@ -180,17 +171,15 @@ clear m datafbin2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Fast" binary file containing all double time, int32 parameter
+% "Fast" binary file containing double time, int32 parameter
 tic
 fid = fopen(filefbin2,'r');
-head = char(fread(fid,21,'uint8=>char'));
 timefbin3 = fread(fid,'double',4);
-fseek(fid,21+8,'bof');
+fseek(fid,8,'bof');
 datafbin3 = fread(fid,'int32=>double',8);
 fclose(fid);
-zerotime = datenum(head(2:end)','yyyy-mm-ddTHH:MM:SS');
-f = 10^(3*str2num(head(1)));
-timefbin3(:,1) =  zerotime + timefbin3/(86400*f);
+zerotime = datenum('1970-01-01','yyyy-mm-dd');
+timefbin3(:,1) =  zerotime + timefbin3(:,1)/(86400);
 tfbin(3) = toc;
 fprintf('fbin w/ints (fread) %.4fs\t# "Fast" binary (time dbl, param int)\n',tfbin(3));
 
@@ -202,15 +191,11 @@ drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % "Fast" binary containing double time and int32 parameter
 tic
-fid = fopen(filefbin2,'r');
-head = char(fread(fid,21,'uint8=>char'));
-fclose(fid);
-zerotime = datenum(head(2:end)','yyyy-mm-ddTHH:MM:SS');
-
-m = memmapfile([file,'int.fbin'], 'Offset',21,'Format',...
+m = memmapfile(filefbin2,'Format',...
     {'double' [1 n] 'time'; 'int32', [1 n] 'data'});
 Data      = m.Data;
 datafbin4 = [Data.data];
+zerotime  = datenum('1970-01-01','yyyy-mm-dd');
 timefbin4 = zerotime + double([Data.time])/86400;
 tfbin(4) = toc;
 fprintf('fbin w/ints (mmap)  %.4fs\t# "Fast" binary (both doubles)\n',tfbin(4));
@@ -227,10 +212,10 @@ import java.nio.file.*
 tic
 p = Paths.get(filefbin(1:2),filefbin(3:end));
 datafbin5 = Files.readAllBytes(p);
-datafbin5 = datafbin5(22:end);
 datafbin5 = typecast(datafbin5(:),'double');
 datafbin5 = reshape(datafbin5,2,length(datafbin5)/2)';
-datafbin5(:,1) = datafbin5(:,1)/86400+datenum('1970-01-01');
+zerotime  = datenum('1970-01-01');
+datafbin5(:,1) = zerotime + datafbin5(:,1)/86400;
 
 tfbin(5) = toc;
 fprintf('fbin (java.nio)     %.4fs\t# "Fast" binary\n',tfbin(5));
@@ -271,7 +256,7 @@ drawnow;datetick;
 % Read and plot using HAPI binary download
 tic
 fid = fopen(filebin,'rb');
-format = '24*char=>char';
+format   = '24*char=>char';
 timebin2 = fread(fid,Inf,format,8);
 timebin2 = timebin2 - '0'; % ASCII code for 0 is 48.  Subtract off to get integers correct.
 fseek(fid,24,'bof');
