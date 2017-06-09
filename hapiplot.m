@@ -39,10 +39,10 @@ end
 
 y = getfield(data,pname); % Data to plot
 
-units = meta.parameters{pn+1}.units; % Parameter units
-if strcmp(units,'null')
+punits = meta.parameters{pn+1}.units; % Parameter units
+if strcmp(punits,'null')
     % HAPI spec says units = null for dimensionless parameters
-    units = '';
+    punits = '';
 end
 
 if isfield(meta.parameters{pn+1},'fill')
@@ -93,14 +93,19 @@ set(th,'Interpreter','none','FontWeight','normal');
 
 if ~isfield(meta.parameters{pn+1},'bins')
     % Plot parameter as one or more time series
-    
+
     ptype = meta.parameters{pn+1}.type;
+    
+    if strcmp(ptype,'isotime')
+        warning(sprintf('Parameter %s is an ISO8601 time stamp. Plotting of this type on the y-axis is not implemented.\n',pname));
+        return;
+    end
+    
     if strcmp(ptype,'string')
         [ustrs,ia,ib] = unique(y,'rows');
         y = ib;
         set(gca,'YTick',[1:length(ia)]);
         set(gca,'YTickLabel',ustrs);
-        legend(meta.parameters{pn+1}.description);
     end
     
     if isfield(meta.parameters{pn+1},'categorymap')
@@ -125,14 +130,17 @@ if ~isfield(meta.parameters{pn+1},'bins')
     
     % Auto label x-axis based on time value
     datetick; 
-    grid on;
     
-    if length(units) > 0
-        yh = ylabel(sprintf('%s [%s]',pname,units));
+    if length(punits) > 0
+        yh = ylabel(sprintf('%s [%s]',pname,punits));
     else
         yh = ylabel(pname);
     end
     set(yh,'Interpreter','none'); 
+
+    if strcmp(ptype,'string')
+        legend(meta.parameters{pn+1}.description);
+    end
     
     if size(y,2) > 1
         for i = 1:size(y,2)
@@ -140,36 +148,87 @@ if ~isfield(meta.parameters{pn+1},'bins')
         end
         legend(legstr);
     end
+    grid on;
+    axis tight;
+    box on;
 else
     % Plot parameter as spectrogram
 
-    % Info required from HAPI server
-    biname     = meta.parameters{pn+1}.bins.name;
-    binranges  = meta.parameters{pn+1}.bins.ranges;
-    bincenters = meta.parameters{pn+1}.bins.centers;
-    % Note bin centers only used.
-    % TODO: Use ranges.
+    binname = meta.parameters{pn+1}.bins.name;
+
+    if isfield(meta.parameters{pn+1}.bins,'ranges')
+        binranges  = meta.parameters{pn+1}.bins.ranges;
+        warning('Parameter has bin ranges, but hapi_plot will not use them.\n');
+    end
+    if isfield(meta.parameters{pn+1}.bins,'centers')
+        bincenters  = meta.parameters{pn+1}.bins.centers;
+    end
+    if exist('binranges','var') && ~exist('bincenters','var')
+        warning('Parameter has bin ranges, but hapi_plot will use average as center location of ranges for bin.\n');        
+    end
+
     if isfield(meta.parameters{pn+1}.bins,'units')
         binunits = meta.parameters{pn+1}.bins.units;
     else
         binunits = '';
     end
-    
-    % Plot matrix as colored squares.
-    p = pcolor(time',binscenters',y');
 
-    % Don't show boundaries for squares.
-    set(p,'EdgeColor','none'); 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Determine if y scale should be log (not well tested).
+    one_zero_or_negative = false;
+    if sum(bincenters <= 0) == 1
+        one_zero_or_negative = true;
+    end
+    z = (bincenters-mean(bincenters))/std(bincenters);
+    loglike = false;
+    spectralike = false;
+    if length(abs(z) > 3) > 5/length(bincenters)
+        loglike = true;
+        if (one_zero_or_negative) && bincenters(1) <= 0
+            spectralike = true;
+            bincenters = bincenters(2:end);
+            y = y(:,2:end);
+            warning(sprintf('Data looks like a spectra that is best plotted on log scale. Not plotting first %s.\n',binname));            
+        end
+        bincenters2 = bincenters(2);
+    end
+    
+    bincenters(1:end-1) = bincenters(1:end-1) - (bincenters(2:end) - bincenters(1:end-1))/2;
+    bincenters(end) = bincenters(end) + (bincenters(end)-bincenters(end-1))/2;
+
+    if (loglike && spectralike && bincenters(1) <=0)
+        bincenters(1) = bincenters(2)/2;
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+
+    % Plot matrix as colored rectangles.
+    p = pcolor(time',bincenters',y');
+
+    % Put grid on top of colored rectangles.
+    set(gca,'layer','top');
+    
+    if loglike && spectralike
+        set(gca,'YScale','log');
+    end
+    
+    % Don't show horizontal lines for rectangle boundaries.
+    if length(bincenters) > 40
+        set(p,'EdgeColor','none');
+    end
+
+    % Use 16 colors so by eye one can match color on plot with
+    % a colorbar value.    
+    colormap(parula(16));
 
     % Show colorbar
     cbh = colorbar;
     
     % Set colorbar title
-    if length(units) > 0
-        cbstr = sprintf('%s [%s]',name,units);
-        title(cbh,cbsstr);
+    if length(punits) > 0
+        cbstr = sprintf('%s [%s]',pname,punits);
+        title(cbh,cbstr);
     else
-        title(cbh,name);
+        title(cbh,binname);
     end
 
     % Set y label
@@ -181,6 +240,14 @@ else
     
     datetick;
     grid on;
+    axis tight;
+    box on;
+
+    if loglike && spectralike
+        % Label top and bottom ticks values.
+        yt = get(gca,'YTick');
+        set(gca,'YTick',[bincenters(1),yt,bincenters(end)]);
+    end
 end
 
 if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
