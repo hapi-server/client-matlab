@@ -15,9 +15,25 @@ format = 'csv';
 %server     = 'http://mag.gmu.edu/TestData/hapi';
 server     = 'http://localhost:8999/hapi';
 dataset    = 'TestData';
-parameters = 'scalar,scalarcats';
+parameters = 'scalar,scalarint,scalarcats,vector';
 start      = '1970-01-01';
-stop       = '1970-01-01T00:00:10';
+stop       = '1970-01-01T00:01:00';
+opts       = struct('format',format,'logging',1,'use_cache',0);
+
+
+[data,meta] = hapi(server, dataset, parameters, start, stop, opts);
+
+hapiplot(data,meta)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Scalar and vector example
+%server     = 'http://mag.gmu.edu/TestData/hapi';
+server     = 'http://localhost:8999/hapi';
+dataset    = 'TestData';
+parameters = 'spectra';
+start      = '1970-01-01';
+stop       = '1970-01-01T00:01:00';
 opts       = struct('format',format,'logging',1,'use_cache',0);
 
 
