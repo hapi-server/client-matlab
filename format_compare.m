@@ -1,6 +1,6 @@
 clear
 
-% Test server of HAPI CSV and binary and the "Fast" CSV and binary.
+% Test server of HAPI CSV and binary and the Fast CSV and binary.
 base = 'http://localhost:8999/hapi';
 %base = 'http://mag.gmu.edu/TestData/hapi';
 
@@ -41,7 +41,7 @@ end
 figure(1);clf;hold on;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Read "Fast" CSV
+% Read Fast CSV
 tic
 fid = fopen(filefcsv,'r');
 A = textscan(fid,'%f','Delimiter',',','CollectOutput',true);
@@ -49,7 +49,8 @@ fclose(fid);
 datafcsv1 = reshape(A{1}',2,length(A{1})/2)';
 datafcsv1(:,1) = datafcsv1(:,1)/86400 + datenum(1970,1,1);
 tfcsv(1) = toc;
-fprintf('fcsv (textscan)     %.4fs\t# "Fast" CSV\n',tfcsv(1));
+fprintf('fcsv (textscan)     %.4fs\t# Fast CSV\n',tfcsv(1));
+mfcsv{1} = 'textscan';
 
 figure(1);
 plot(datafcsv1(:,1),datafcsv1(:,2),'b');
@@ -57,12 +58,13 @@ drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Read "Fast" CSV
+% Read Fast CSV
 tic
 datafcsv2 = load(filefcsv);
 datafcsv2(:,1) = datafcsv2(:,1)/86400 + datenum(1970,1,1);
 tfcsv(2) = toc;
-fprintf('fcsv (load)         %.4fs\t# "Fast" CSV\n',tfcsv(2));
+fprintf('fcsv (load)         %.4fs\t# Fast CSV\n',tfcsv(2));
+mfcsv{2} = 'load';
 
 figure(1);
 plot(datafcsv2(:,1),datafcsv2(:,2),'r');
@@ -78,6 +80,7 @@ datacsv1 = readtable(filecsv,'Delimiter',',','Format',format,'ReadVariableNames'
 datacsv1.Var1 = datenum(datacsv1.Var1);
 tcsv(1) = toc;
 fprintf('csv (readtbl/tfmt)  %.4fs\t# HAPI CSV\n',tcsv(1));
+mcsv{1} = 'readtbl/tfmt';
 
 figure(1);
 plot(datacsv1.Var1,datacsv1.Var2,'g');
@@ -93,6 +96,7 @@ datacsv2{1} = datenum(datacsv2{1});
 fclose(fid);
 tcsv(2) = toc;
 fprintf('csv (textscan/tfmt) %.4fs\t# HAPI CSV\n',tcsv(2));
+mcsv{2} = 'textscan/tfmt';
 
 figure(1);
 plot(datacsv2{1},datacsv2{2},'k');
@@ -110,6 +114,7 @@ datacsv3{1} = double(datacsv3{1});
 datacsv3{1} = datenum(double(datacsv3{1}(:,1:6))) + datacsv3{1}(:,7)/1000;
 tcsv(3) = toc;
 fprintf('csv (textscan)      %.4fs\t# HAPI CSV\n',tcsv(3));
+mcsv{3} = 'textscan';
 
 figure(1);
 plot(datacsv3{1},datacsv3{2},'y');
@@ -129,16 +134,15 @@ datacsv4 = str2num(str);
 datacsv4 = [datenum(datacsv4(:,1:6)),datacsv4(:,7:end)];
 tcsv(4) = toc;
 fprintf('csv (regex/str2num) %.4fs\t# HAPI CSV\n',tcsv(4));
+mcsv{4} = 'regex/str2num';
 
 figure(1);
 plot(datacsv4(:,1),datacsv4(:,2),'b');
 drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Fast" binary file containing all doubles
+% Fast binary file containing all doubles
 tic
 fid = fopen(filefbin,'r');
 datafbin1 = fread(fid,'double');
@@ -147,7 +151,8 @@ datafbin1 = reshape(datafbin1,n+1,length(datafbin1)/(n+1))';
 zerotime  = datenum('1970-01-01','yyyy-mm-dd');
 datafbin1(:,1) =  zerotime + datafbin1(:,1)/(86400);
 tfbin(1) = toc;
-fprintf('fbin (fread)        %.04fs\t# "Fast" binary (both doubles)\n',tfbin(1));
+fprintf('fbin (fread)        %.04fs\t# Fast binary (both doubles)\n',tfbin(1));
+mfbin{1} = 'fread';
 
 figure(1);
 plot(datafbin1(:,1),datafbin1(:,2),'m');
@@ -155,14 +160,15 @@ drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Fast" binary file containing all doubles
+% Fast binary file containing all doubles
 tic
 m = memmapfile(filefbin,'Format','double');
 datafbin2 = reshape(m.Data,2,length(m.Data)/(2))';
 zerotime  = datenum('1970-01-01','yyyy-mm-dd');
 datafbin2(:,1) = zerotime + datafbin2(:,1)/86400;
 tfbin(2) = toc;
-fprintf('fbin (mmap)         %.4fs\t# "Fast" binary (both doubles)\n',tfbin(2));
+fprintf('fbin (mmap)         %.4fs\t# Fast binary (both doubles)\n',tfbin(2));
+mfbin{2} = 'mmap';
 
 figure(1);
 plot(datafbin2(:,1),datafbin2(:,2),'k');
@@ -171,7 +177,7 @@ clear m datafbin2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Fast" binary file containing double time, int32 parameter
+% Fast binary file containing double time, int32 parameter
 tic
 fid = fopen(filefbin2,'r');
 timefbin3 = fread(fid,'double',4);
@@ -181,7 +187,8 @@ fclose(fid);
 zerotime = datenum('1970-01-01','yyyy-mm-dd');
 timefbin3(:,1) =  zerotime + timefbin3(:,1)/(86400);
 tfbin(3) = toc;
-fprintf('fbin w/ints (fread) %.4fs\t# "Fast" binary (time dbl, param int)\n',tfbin(3));
+fprintf('fbin w/ints (fread) %.4fs\t# Fast binary (time dbl, param int)\n',tfbin(3));
+mfbin{3} = 'int/fread';
 
 figure(1)
 plot(timefbin3,datafbin3/1000,'y'); % Int parameter is int32(1000*sin(t))
@@ -189,7 +196,7 @@ drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Fast" binary containing double time and int32 parameter
+% Fast binary containing double time and int32 parameter
 tic
 m = memmapfile(filefbin2,'Format',...
     {'double' [1 n] 'time'; 'int32', [1 n] 'data'});
@@ -198,7 +205,8 @@ datafbin4 = [Data.data];
 zerotime  = datenum('1970-01-01','yyyy-mm-dd');
 timefbin4 = zerotime + double([Data.time])/86400;
 tfbin(4) = toc;
-fprintf('fbin w/ints (mmap)  %.4fs\t# "Fast" binary (both doubles)\n',tfbin(4));
+fprintf('fbin w/ints (mmap)  %.4fs\t# Fast binary (both doubles)\n',tfbin(4));
+mfbin{4} = 'int/mmap';
 
 figure(1)
 plot(timefbin4,datafbin4/1000,'y'); % Int parameter is int32(1000*sin(t))
@@ -207,7 +215,7 @@ clear m Data timefbin4 datfbin4
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Fast" binary file
+% Fast binary file
 import java.nio.file.*
 tic
 p = Paths.get(filefbin(1:2),filefbin(3:end));
@@ -218,7 +226,8 @@ zerotime  = datenum('1970-01-01');
 datafbin5(:,1) = zerotime + datafbin5(:,1)/86400;
 
 tfbin(5) = toc;
-fprintf('fbin (java.nio)     %.4fs\t# "Fast" binary\n',tfbin(5));
+fprintf('fbin (java.nio)     %.4fs\t# Fast binary\n',tfbin(5));
+mfbin{5} = 'java.nio';
 
 figure(1)
 plot(datafbin5(:,1),datafbin5(:,2),'y');
@@ -246,6 +255,7 @@ databin1 = databin1(:,25:end)';
 databin1 = typecast(databin1(:)','double');
 tbin(1) = toc;
 fprintf('bin (java.nio)      %.4fs\t# HAPI binary\n',tbin(1));
+mbin{1} = 'java.nio';
 
 figure(1)
 plot(timebin1,databin1,'r');
@@ -276,6 +286,7 @@ timebin2(:,7) = 100*timebin2(:,15) + 10*timebin2(:,16) + B(:,17);
 timebin2 = datenum(timebin2(:,1:6)) + timebin2(:,7)/86400000;
 tbin(2) = toc;
 fprintf('bin (kludge)        %.4fs\t# HAPI binary\n',tbin(2));
+mbin{2} = 'kludge';
 
 figure(1)
 plot(timebin2,databin2,'r');
@@ -302,7 +313,8 @@ timebin3(:,6) = 10*timebin3(:,13) + timebin3(:,14);
 timebin3(:,7) = 100*timebin3(:,15) + 10*timebin3(:,16) + timebin3(:,17);
 timebin3 = datenum(timebin3(:,1:6)) + timebin3(:,7)/86400000;
 tbin(3) = toc;
-fprintf('bin (memmap alt):   %0.4fs\t# HAPI binary\n',tbin(3));
+fprintf('bin (mmap):         %0.4fs\t# HAPI binary\n',tbin(3));
+mbin{3} = 'mmap';
 
 figure(1)
 plot(timebin3,databin3,'r');
@@ -331,7 +343,8 @@ databin4 = databin4(:,25:end)';
 databin4 = typecast(databin4(:)','double');
 
 tbin(4) = toc;
-fprintf('bin (memmap alt2):  %0.4fs\t# HAPI binary\n',tbin(4));
+fprintf('bin (mmap2):        %0.4fs\t# HAPI binary\n',tbin(4));
+mbin{4} = 'mmap2';
 
 figure(1)
 plot(timebin4,databin4,'y');
@@ -371,7 +384,9 @@ datetick;
 
 clear m Data databin5 timebin5  % Un-memmap file
 
-fprintf('bin (mmap/datastr)  %0.4fs\t# HAPI binary\n',tbin(5));
+fprintf('bin (mmap/datestr)  %0.4fs\t# HAPI binary\n',tbin(5));
+mbin{5} = 'mmap/datestr';
+
 %fprintf('  (bin memmap:        %0.4fs)\n',tbinx(1));
 %fprintf('  (bin extract data:  %0.4fs)\n',tbinx(2));
 %fprintf('  (bin extract time:  %0.4fs)\n',tbinx(3));
@@ -380,12 +395,17 @@ fprintf('bin (mmap/datastr)  %0.4fs\t# HAPI binary\n',tbin(5));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Results
+[mtcsv,icsv] = min(tcsv);
+[mtbin,ibin] = min(tbin);
+[mtfcsv,ifcsv] = min(tfcsv);
+[mtfbin,ifbin] = min(tfbin);
+
 fprintf('\nBest-Time Ratios\n')
-fprintf('csv/fcsv:   %0.1f\n',min(tcsv)/min(tfcsv));
-fprintf('bin/fbin:   %0.1f\n',min(tbin)/min(tfbin));
+fprintf('csv/fcsv:   %0.1f (%s)/(%s)\n',mtcsv/mtfcsv,mcsv{icsv},mfcsv{ifcsv});
+fprintf('bin/fbin:   %0.1f (%s)/(%s)\n',mtbin/mtfbin,mbin{ibin},mfbin{ifbin});
 fprintf('\n');
-fprintf('csv/bin     %0.1f\n',min(tcsv)/min(tbin));
-fprintf('fcsv/fbin:  %0.1f\n',min(tfcsv)/min(tfbin));
+fprintf('csv/bin     %0.1f (%s)/(%s)\n',mtcsv/mtbin,mcsv{icsv},mbin{ibin});
+fprintf('fcsv/fbin:  %0.1f (%s)/(%s)\n',mtfcsv/mtfbin,mfcsv{ifcsv},mfbin{ifbin});
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if (0)
