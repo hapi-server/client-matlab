@@ -167,7 +167,12 @@ if (nin == 1)
     if (DOPTS.logging),fprintf('Reading %s ... ',url);end
 
     opts = weboptions('ContentType', 'json');
-    data = webread(url,opts);
+    try
+        data = webread(url,opts);
+    catch err
+        error(err.message);
+        return
+    end
     
     if (DOPTS.logging || nargout == 0),fprintf('\nAvailable datasets from %s:\n',SERVER);end
 
@@ -205,7 +210,12 @@ if (nin == 2)
 
     if (DOPTS.logging) fprintf('Downloading %s ... ',url);end
 	opts = weboptions('ContentType', 'json');
-    data = webread(url,opts);
+    try
+        data = webread(url,opts);
+    catch err
+        error(err.message);
+        return
+    end    
     if (DOPTS.logging) fprintf('Done.\n');end
 
     start = data.startDate;
@@ -273,7 +283,13 @@ if (nin == 3 || nin == 5)
     
     if (DOPTS.logging) fprintf('Downloading %s ... ',urljson);end
 	opts = weboptions('ContentType', 'json');
-    meta = webread(urljson,opts);
+    try
+        meta = webread(urljson,opts);
+    catch err
+        error(err.message);
+        return
+    end
+    
     if (DOPTS.logging) fprintf('Done.\n');end
     if (nin == 3)
         data = meta
@@ -354,6 +370,10 @@ if (nin == 3 || nin == 5)
         timelen = meta.parameters{1}.length;
         % TODO: Handle alternative time respresentations that are allowed:
         % Truncated time and YYYY-DD.  Determine format from regex.
+        % Probably want to use this
+        % https://github.com/JodaOrg/joda-time/releases/download/v2.9.9/joda-time-2.9.9.jar
+        % for non-standard time strings instead of writing a native
+        % MATLAB parser.
         if strmatch(str(timelen-1),'Z') % Last char is Z
             % Read format string
             rformat  = '%4d-%2d-%2dT%2d:%2d:%2d.%3dZ ';
