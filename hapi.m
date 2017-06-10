@@ -7,41 +7,40 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   (https://github.com/hapi-server/).  See note below for GUI options for
 %   selecting data.
 %
-%   Servers = HAPI() or HAPI() returns or lists data server URLs from
+%   Servers = HAPI() or HAPI() returns or lists data server URLs from know
+%   HAPI servers listed at
 %   https://github.com/hapi-server/data-specification/blob/master/servers.txt
 %
 %   Dataset = HAPI(Server) or HAPI(Server) returns or lists datasets
 %   available at server URL.
 %
 %   Parameters = HAPI(Server, Dataset) or HAPI(...) returns or
-%   lists parameters in dataset.
+%   lists parameters in Dataset.
 %
 %   Metadata = HAPI(Server, Dataset, Parameters) or HAPI(...) returns or
-%   list metadata associated each parameter. The Parameters input 
-%   can be a string, array, or cell array.
+%   lists metadata associated each parameter. The Parameters input 
+%   can be a string or cell array.
 %
-%   Data = HAPI(Server, Dataset, Parameters, Start, Stop) or HAPI(...)
+%   [Data,Metadata] = HAPI(Server, Dataset, Parameters, Start, Stop) or HAPI(...)
 %   returns a matrix of data.  Start and Stop are ISO8601 time stamps.
-%   First column of Data is time converted to MATLAB datenum.
+%   First column of Data is time converted to MATLAB datenum.  If
+%   Parameters = '', all parameters are returned.
 %
 %   Options are set by passing a structure as the last argument with fields
 %
-%       update_script (default true) - Use newer hapi.m if found.
 %       logging (default false) - Log to console.
-%       cache_hapi (default true) - Save files in hapi-data.
-%       use_cache (default true) - Use cache file if found.
-%       serverlist (default https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt)
+%       cache_hapi (default true) - Save server response files in ./hapi-data.
+%       use_cache (default true) - Use cache file in ./hapi-data if found.
 %   
 %   e.g., to reverse default options, use
 %       OPTS = struct();
-%       OPTS.updatescript = 0;
 %       OPTS.logging      = 1;
 %       OPTS.cache_hapi   = 0;
 %       OPTS.use_cache    = 0;
 %       HAPI(...,OPTS)
 %
-%   This is a command-line only interface.  For a GUI for browsing catalogs
-%   and datasets and selecting a dataset and parameters, see
+%   This is a command-line only interface.  For a GUI for browsing
+%   catalogs and datasets and selecting a dataset and parameters, see
 %   http://tsds.org/get/.  Select a catalog, dataset, parameter, and
 %   time range and then request a MATLAB script as an output.  A script
 %   will be generated that can be pasted onto the command line.
@@ -51,7 +50,7 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %            and the following script will be shown
 %              urlwrite('https://github.com/hapi-server/matlab-client/blob/master/','hapi.m');
 %              [data,meta] = hapi('http://tsds.org/get/SSCWeb/hapi/','ace','X_TOD','2017-04-23','2017-04-24');
-%            copy and paste these two lines in MATLAB.
+%            Copy and paste these two lines in MATLAB.
 %
 %   See also HAPI_DEMO, DATENUM.
 
@@ -71,7 +70,7 @@ DOPTS.logging       = 0;
 DOPTS.cache_mlbin   = 1; % Save data requested in MATLAB binary for off-line use.
 DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) for debugging/sharing.
 DOPTS.use_cache     = 1; % Use cached MATLAB binary file associated with request if its exists.
-DOPTS.use_binary    = 0; % Will be removed.
+DOPTS.format        = 'csv'; % If 'csv', request for HAPI CSV will be made even if server supports HAPI Binary. 
 
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
@@ -240,8 +239,11 @@ end
 
 if (nin == 3 || nin == 5)
 
-    meta.x_ = struct();
-
+    if iscell(PARAMETERS)
+        PARAMETERS = sprintf('%s,',PARAMETERS{:});
+        PARAMETERS = PARAMETERS(1:end-1); % Remove trailing comma
+    end
+    
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi || DOPTS.use_cache)
         urld = regexprep(SERVER,'https*://(.*)','$1');
         urld = ['hapi-data',filesep(),regexprep(urld,'/','_')];
@@ -307,20 +309,20 @@ if (nin == 3 || nin == 5)
         if (DOPTS.logging) fprintf('Wrote %s ...\n',fnamejson);end
     end
 
-    if (DOPTS.use_binary)
+    if ~strcmp(DOPTS.format,'csv')
         % Determine if server supports binary
         url = [SERVER,'/capabilities'];
         if (DOPTS.logging) fprintf('Reading %s ... ',url);end
         opts = weboptions('ContentType', 'json');
         caps = webread(url,opts);
         if (DOPTS.logging) fprintf('Done.\n');end
-        if isempty(strmatch('fbinary',caps.outputFormats,'exact'))
-            fprintf('DOPTS.use_binary = true, but server does not support binary output.\n');
-            DOPTS.use_binary = false;
+        if any(strcmp(caps.outputFormats,'binary'))
+            binaryavailable = 1;
         end
     end
-
-    if (DOPTS.use_binary)
+    
+    if ~strcmp(DOPTS.format,'csv') && binaryavailable
+        % Binary read.
         % TODO: Account for mixed types?  But can't have single array
         % with integer and doubles.  
         if (DOPTS.logging) fprintf('Downloading %s ... ',urlfbin);end
@@ -349,6 +351,7 @@ if (nin == 3 || nin == 5)
         meta.x_.cachefile = fnamebin;
         
     else
+        % CSV read.
         if (DOPTS.cache_hapi)
             if (DOPTS.logging) fprintf('Downloading %s ... ',urlcsv);end
             % Save to file and read file
@@ -386,6 +389,7 @@ if (nin == 3 || nin == 5)
 
         ntc     = 7; % Number of time columns
         lcol(1) = ntc; % Last time column. (TODO: Compute in general based on timeformat.)
+
         for i = 2:length(meta.parameters) % 1 corresponds to time.
             if isfield(meta.parameters{i},'size')
                 psize(i-1)  = meta.parameters{i}.size;
@@ -408,14 +412,11 @@ if (nin == 3 || nin == 5)
             end
             if any(strcmp(ptype{i-1},{'isotime','string'}))
                 plength{i-1}  = meta.parameters{i}.length - 1;
-                % Only handles scalar string parameters
-                rformat = [rformat,'%',num2str(plength{i-1}),'c'];
+                rformat = [rformat,repmat(['%',num2str(plength{i-1}),'c '],1,psize(i-1))];
             end
         end
-        
         if (DOPTS.logging) fprintf('Parsing %s ... ',fnamecsv);end
         
-        %tic
         fid = fopen(fnamecsv,'r');
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
@@ -432,8 +433,14 @@ if (nin == 3 || nin == 5)
         data      = struct();
         data      = setfield(data,'Time',Time);
         data      = setfield(data,'DateTimeVector',DTVec');
+
         for i = 1:length(pnames)
-            pdata = cat(2,A{fcol(i):lcol(i)});
+            if any(strcmp(ptype{i},{'isotime','string'}))
+                % Array parameter of type isotime or string
+                pdata = A(fcol(i):lcol(i));
+            else
+                pdata = cat(2,A{fcol(i):lcol(i)});
+            end
             data  = setfield(data,pnames{i},pdata);
         end
 
@@ -445,6 +452,8 @@ if (nin == 3 || nin == 5)
 
     end
 
+    % Save extra metadata about request in MATLAB binary file
+    meta.x_ = struct();
     meta.x_.server     = SERVER;
     meta.x_.dataset    = DATASET;
     meta.x_.parameters = PARAMETERS;
