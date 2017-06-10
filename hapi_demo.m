@@ -11,60 +11,90 @@ end
 format = 'csv';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Scalar and vector example
-%server     = 'http://mag.gmu.edu/TestData/hapi';
-server     = 'http://localhost:8999/hapi';
+% All parameters from TestData server
+url = 'http://localhost:8999/hapi';
+[str,stat]  = urlread(url);
+if stat == 0 % Not runing test server locally
+    url = 'http://mag.gmu.edu/TestData/hapi';
+end
+server     = url;
 dataset    = 'TestData';
-parameters = 'scalar,scalarint,scalarcats,vector';
+parameters = 'scalar';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
 opts       = struct('format',format,'logging',1,'use_cache',0);
 
-
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
 hapiplot(data,meta)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+break
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Scalar and vector example
-%server     = 'http://mag.gmu.edu/TestData/hapi';
-server     = 'http://localhost:8999/hapi';
+% All parameters from TestData server
+url = 'http://localhost:8999/hapi';
+[str,stat]  = urlread(url);
+if stat == 0 % Not runing test server locally
+    url = 'http://mag.gmu.edu/TestData/hapi';
+end
+server     = url;
 dataset    = 'TestData';
-parameters = 'spectra';
+parameters = 'vectoriso';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
 opts       = struct('format',format,'logging',1,'use_cache',0);
 
-
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
 hapiplot(data,meta)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 break
-
-format = 'csv';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Scalar and vector example
-server     = 'http://mag.gmu.edu/TestData/hapi';
-%server     = 'http://localhost:8999/hapi'
+% All parameters from TestData server
+url = 'http://localhost:8999/hapi';
+[str,stat]  = urlread(url);
+if stat == 0 % Not runing test server locally
+    url = 'http://mag.gmu.edu/TestData/hapi';
+end
+server     = url;
 dataset    = 'TestData';
-parameters = 'scalar,scalarint,vector';
+parameters = 'scalariso';
 start      = '1970-01-01';
-stop       = '1970-01-01T00:00:10';
+stop       = '1970-01-01T00:01:00';
 opts       = struct('format',format,'logging',1,'use_cache',0);
 
-
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
-% data is structure with fields:
-% data.Time           % time string as represented in server response
-% data.DataTimeVector % yr,mo,dy,hr,mn,sc,...
-% data.scalar         % first parameter in parameters string
-% data.scalarint      % etc.
-% data.vector
+
 hapiplot(data,meta)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 break
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Metadata request examples
+sn = 3; % Server number in servers.txt
+dn = 1; % Dataset number from first server
+
+Servers = hapi();
+
+% List datasets from second server in list
+hapi(Servers{sn}); 
+% or
+% hapi(Servers{sn},opts); 
+
+% MATLAB structure of JSON dataset list
+metad = hapi(Servers{sn})
+% or 
+% metad = hapi(Servers{sn},opts)
+
+% MATLAB structure of JSON parameter list
+metap = hapi(Servers{sn}, metad.catalog{dn}.id)
+% or
+% metap = hapi(Servers{sn},ids{dn},opts);
+
+% MATLAB structure of reduced JSON parameter list
+metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{2}.name)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Scalar time series example
@@ -97,30 +127,4 @@ opts       = struct('logging',1,'use_cache',0);
 
 % Plot
 hapiplot(meta,data)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Metadata request examples
-sn = 3; % Server number in servers.txt
-dn = 1; % Dataset number from first server
-
-Servers = hapi();
-
-% List datasets from second server in list
-hapi(Servers{sn}); 
-% or
-% hapi(Servers{sn},opts); 
-
-% MATLAB structure of JSON dataset list
-metad = hapi(Servers{sn})
-% or 
-% metad = hapi(Servers{sn},opts)
-
-% MATLAB structure of JSON parameter list
-metap = hapi(Servers{sn}, metad.catalog{dn}.id)
-% or
-% metap = hapi(Servers{sn},ids{dn},opts);
-
-% MATLAB structure of reduced JSON parameter list
-metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{2}.name)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
