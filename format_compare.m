@@ -177,6 +177,25 @@ clear m datafbin2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Fast binary file containing all doubles
+tic
+m = memmapfile(filefbin, 'Format','uint8');
+datafbin6 = typecast(m.Data,'double');
+datafbin6 = reshape(datafbin6,2,length(datafbin6)/2)';
+
+datafbin6(:,1) = datenum('1970-01-01') + datafbin6(:,1)/86400000;
+
+tfbin(6) = toc;
+fprintf('fbin (mmap2):       %0.4fs\t# Fast binary (both doubles)\n',tfbin(6));
+mbin{6} = 'mmap2';
+
+figure(1)
+plot(datafbin6(:,1),datafbin6(:,2),'c');
+drawnow;datetick;
+clear databin6 timefbin6 m
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Fast binary file containing double time, int32 parameter
 tic
 fid = fopen(filefbin2,'r');
@@ -205,7 +224,7 @@ datafbin4 = [Data.data];
 zerotime  = datenum('1970-01-01','yyyy-mm-dd');
 timefbin4 = zerotime + double([Data.time])/86400;
 tfbin(4) = toc;
-fprintf('fbin w/ints (mmap)  %.4fs\t# Fast binary (both doubles)\n',tfbin(4));
+fprintf('fbin w/ints (mmap)  %.4fs\t# Fast binary (time dbl, param int)\n',tfbin(4));
 mfbin{4} = 'int/mmap';
 
 figure(1)
@@ -226,7 +245,7 @@ zerotime  = datenum('1970-01-01');
 datafbin5(:,1) = zerotime + datafbin5(:,1)/86400;
 
 tfbin(5) = toc;
-fprintf('fbin (java.nio)     %.4fs\t# Fast binary\n',tfbin(5));
+fprintf('fbin (java.nio)     %.4fs\t# Fast binary (both doubles)\n',tfbin(5));
 mfbin{5} = 'java.nio';
 
 figure(1)
@@ -263,7 +282,7 @@ drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Read and plot using HAPI binary download
+% HAPI binary file
 tic
 fid = fopen(filebin,'rb');
 format   = '24*char=>char';
@@ -378,15 +397,13 @@ tbinx(4) = toc;
 
 tbin(5) = sum(tbinx);
 
+fprintf('bin (mmap/datenum)  %0.4fs\t# HAPI binary\n',tbin(5));
+mbin{5} = 'mmap/datenum';
+
 figure(1);
 plot(timebin5,databin5(:,1),'r');
 datetick;
-
 clear m Data databin5 timebin5  % Un-memmap file
-
-fprintf('bin (mmap/datestr)  %0.4fs\t# HAPI binary\n',tbin(5));
-mbin{5} = 'mmap/datestr';
-
 %fprintf('  (bin memmap:        %0.4fs)\n',tbinx(1));
 %fprintf('  (bin extract data:  %0.4fs)\n',tbinx(2));
 %fprintf('  (bin extract time:  %0.4fs)\n',tbinx(3));
