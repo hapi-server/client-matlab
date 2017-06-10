@@ -8,7 +8,21 @@ function hapiplot(data,meta,pn)
 np = length(meta.parameters) - 1; % Number of parameters (excluding Time)
 if nargin < 3
     for i = 1:np
-        hapiplot(data,meta,i);
+        if ~isfield(meta.parameters{i+1},'size') && ~any(strcmp(meta.parameters{i+1}.type,{'string','isotime'}))            
+            hapiplot(data,meta,i);
+        else
+            % A string or isotime parameter that is an array
+            name  = meta.parameters{i+1}.name;
+            comps = getfield(data,name); % Components of array
+            datar = data;
+            metar = meta;
+            for j = 1:length(comps)
+                datar = setfield(datar,name,comps{j}); % Reduced data
+                metar.parameters{i+1}.label = [name,' element ',num2str(j)];
+                % Plot each component separately.
+                hapiplot(datar,metar,i);
+            end    
+        end
         % MATLAB passes by value, so delete data after passed.
         rmfield(data,meta.parameters{i}.name);
     end
@@ -16,6 +30,12 @@ if nargin < 3
 end
 
 pname = meta.parameters{pn+1}.name;  % Parameter name
+if isfield(meta.parameters{pn+1},'label')
+  % Parameter name for string or isotime arrays
+    label = meta.parameters{pn+1}.label;
+else
+    label = pname;
+end
 
 % Output file name.
 fname = sprintf('%s_%s_%s_%s',...
@@ -67,7 +87,7 @@ tstr = sprintf('%s/id=%s&parameters=%s',meta.x_.server,meta.x_.dataset,pname);
 % Open figure and give title to figure window.
 fhs = findobj('Type', 'figure');
 for i = 1:length(fhs)
-    if strcmp(fhs(i).Name,pname)
+    if strcmp(fhs(i).Name,label)
         % If figure already exists for this parameter, overwrite.
         fh = figure(fhs(i).Number);clf;
         break
@@ -75,10 +95,10 @@ for i = 1:length(fhs)
 end
 if ~exist('fh','var')
     fh = figure();
-    set(fh,'Name',pname);
+    set(fh,'Name',label);
 end
 
-gca; hold on; % Force axes to appear so they can be labeled.
+gca;hold on; % Force axes to appear so they can be labeled.
 if (time(1) - time(1) <= 1)
     % Show date in x-label b/c because datetick does not
     % show date if <= one day of data.
@@ -97,8 +117,7 @@ if ~isfield(meta.parameters{pn+1},'bins')
     ptype = meta.parameters{pn+1}.type;
     
     if strcmp(ptype,'isotime')
-        warning(sprintf('Parameter %s is an ISO8601 time stamp. Plotting of this type on the y-axis is not implemented.\n',pname));
-        return;
+        y = iso2mldn(y);
     end
     
     if strcmp(ptype,'string')
@@ -129,14 +148,21 @@ if ~isfield(meta.parameters{pn+1},'bins')
     ph = plot(time,y,props{:});
     
     % Auto label x-axis based on time value
-    datetick; 
+    datetick('x');
     
     if length(punits) > 0
-        yh = ylabel(sprintf('%s [%s]',pname,punits));
+        yh = ylabel(sprintf('%s [%s]',label,punits));
     else
         yh = ylabel(pname);
     end
-    set(yh,'Interpreter','none'); 
+    if strcmp(ptype,'isotime')
+        datetick('y');
+        if (y(end)-y(1) <= 1)
+            yl = [get(get(gca,'YLabel'),'String'),' on ',datestr(y(1),'yyyy-mm-dd')];
+            ylabel(yl);
+        end
+    end    
+    set(yh,'Interpreter','none');
 
     if strcmp(ptype,'string')
         legend(meta.parameters{pn+1}.description);
@@ -251,6 +277,9 @@ else
 end
 
 if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
-fname = ['./hapi-figures/',fname,'.png'];
-print('-dpng',fname);
-fprintf('hapiplot.m: Wrote %s\n',fname);
+fnamepng = ['./hapi-figures/',fname,'.png'];
+fnamepdf = ['./hapi-figures/',fname,'.pdf'];
+print('-dpng',fnamepng);
+fprintf('hapiplot.m: Wrote %s\n',fnamepng);
+print('-dpdf',fnamepdf);
+fprintf('hapiplot.m: Wrote %s\n',fnamepdf);
