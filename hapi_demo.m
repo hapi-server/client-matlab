@@ -18,7 +18,7 @@ if stat == 0 % Not runing test server locally
     url = 'http://mag.gmu.edu/TestData/hapi';
 end
 server     = url;
-dataset    = 'TestData';
+dataset    = 'dataset1';
 parameters = 'scalar';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
@@ -37,7 +37,7 @@ if stat == 0 % Not runing test server locally
     url = 'http://mag.gmu.edu/TestData/hapi';
 end
 server     = url;
-dataset    = 'TestData';
+dataset    = 'dataset1';
 parameters = 'vectoriso';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
@@ -58,7 +58,7 @@ if stat == 0 % Not runing test server locally
     url = 'http://mag.gmu.edu/TestData/hapi';
 end
 server     = url;
-dataset    = 'TestData';
+dataset    = 'dataset1';
 parameters = 'scalariso';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';

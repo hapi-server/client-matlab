@@ -19,23 +19,23 @@ if ~exist(['.',filesep(),'tmp'],'dir')
 end
 if ~exist(filecsv,'file')
     % Download HAPI csv
-    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=csv'],filecsv);
+    urlwrite([base,'/data/?id=dataset1&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=csv'],filecsv);
 end
 if ~exist(filebin,'file')
     % Download HAPI binary
-    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=binary'],filebin);
+    urlwrite([base,'/data/?id=dataset1&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=binary'],filebin);
 end
 if ~exist(filefcsv,'file')
     % Download fast csv
-    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fcsv'],filefcsv);
+    urlwrite([base,'/data/?id=dataset1&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fcsv'],filefcsv);
 end
 if ~exist(filefbin,'file')
     % Download fast binary; all doubles
-    urlwrite([base,'/data/?id=TestData&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],filefbin);
+    urlwrite([base,'/data/?id=dataset1&parameters=',file,'&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],filefbin);
 end
 if ~exist(filefbin2,'file')
     % Download fast binary; time is double, parameter is integer
-    urlwrite([base,'/data/?id=TestData&parameters=',file,'int','&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],filefbin2);
+    urlwrite([base,'/data/?id=dataset1&parameters=',file,'int','&time.min=1970-01-01&time.max=1970-01-02T00:00:00&format=fbinary'],filefbin2);
 end
 
 figure(1);clf;hold on;
