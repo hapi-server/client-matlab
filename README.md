@@ -3,8 +3,10 @@
 ## Installation
 
 In MATLAB, simply execute
+
 ```matlab
-urlwrite('https://github.com/hapi-server/matlab-client/hapi.m','hapi.m'); % D/L and save hapi.m
+% D/L and save hapi.m
+urlwrite('https://github.com/hapi-server/matlab-client/hapi.m','hapi.m');
 help hapi
 ```
 
@@ -12,13 +14,17 @@ Or, download [the package](https://github.com/hapi-server/matlab-client/archive/
 
 ## Examples
 
-Example usage is given in [hapi_demo.m](https://github.com/hapi-server/matlab-client/hapi_demo.m)
+Example usage is given in [hapi_demo.m](https://github.com/hapi-server/matlab-client/hapi_demo.m).
+
+The console and figure output of this script is viewable at [hapi_demo.md](https://github.com/hapi-server/matlab-client/hapi_demo.md).
 
 To run examples, execute
 
 ```matlab
-urlwrite('https://github.com/hapi-server/matlab-client/hapi.m','hapi.m'); % D/L and save hapi.m
-urlwrite('https://github.com/hapi-server/matlab-client/hapi_demo.m','hapi_demo.m'); % D/L hapi_demo.m
+% Download hapi.m
+urlwrite('https://github.com/hapi-server/matlab-client/hapi.m','hapi.m'); 
+% Download hapi_demo.m
+urlwrite('https://github.com/hapi-server/matlab-client/hapi_demo.m','hapi_demo.m');
 hapi_demo % Execute hapi_demo script
 ```
 
@@ -28,6 +34,13 @@ hapi_demo % Execute hapi_demo script
 git clone https://github.com/hapi-server/matlab-client.git
 ```
 
+TODO:
+
+1. Generalize time parsing in `hapi.m`.
+2. Finish binary reader.
+
 ## Contact
+
+Submit bug reports and feature requests on the [repository issue tracker](https://github.com/hapi-server/matlab-client/issues).
 
 Bob Weigel <rweigel@gmu.edu>

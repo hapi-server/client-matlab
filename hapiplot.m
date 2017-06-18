@@ -1,25 +1,80 @@
-function hapiplot(data,meta,pn)
+function hapiplot(data,meta,pn,compstr)
 % HAPIPLOT - Create and save figures of response from HAPI server
 % 
-%   HAPIPLOT(meta,data) Plot all parameters in data
+%   HAPIPLOT(Data,Meta) Plot all parameters in data
 %
-%   HAPIPLOT(meta,data,pn) Plots only parameter number pn
+%   HAPIPLOT(Data,Meta,Pname) Plots parameter named Pname vs. Time.
+%
+%   HAPIPLOT(Data,Meta,pnum) Plots parameter number pnum vs. Time.
+%   For example, to plot the first non-Time parameter vs. Time, use
+%   HAPIPLOT(Data,Meta,1). (The parameter number is 1 + the element
+%   number the parameter in Meta.parameters; Meta.parameters{1} is
+%   always Time, and Time can not be plotted alone).
+%
+%   See also HAPI_DEMO.
 
-np = length(meta.parameters) - 1; % Number of parameters (excluding Time)
-if nargin < 3
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Author: R.S Weigel <rweigel@gmu.edu>
+% License: This is free and unencumbered software released into the public domain.
+% Repository: https://github.com/hapi-server/matlab-client.git
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if exist('pn','var') && isstr(pn)
+    if ~isfield(data,pn),error(sprintf('\nParameter %s not found.',pn));end
+    parameters = meta.parameters;
+    for i = 2:length(parameters)
+        if strcmp(parameters{i},pn)
+            break
+        end
+    end
+    meta.parameters = {meta.parameters{1},meta.parameters{i}};
+    clear pn;
+end
+
+% Number of parameters (excluding Time)
+np = length(meta.parameters) - 1;
+if ~exist('pn','var') 
     for i = 1:np
-        if ~isfield(meta.parameters{i+1},'size') && ~any(strcmp(meta.parameters{i+1}.type,{'string','isotime'}))            
-            hapiplot(data,meta,i);
+        if ~any(strcmp(meta.parameters{i+1}.type,{'string','isotime'})) %% && isfield(meta.parameters{i+1},'size'))
+            % Doubles or integers that are stored as matrices.
+            if ~isfield(meta.parameters{i+1},'size');
+                meta.parameters{i+1}.size = [1];
+            end
+            psize = meta.parameters{i+1}.size;
+            if length(psize) == 1 % Parameter is stored as 2-D matrix with rows of time
+                hapiplot(data,meta,i);
+            else
+                pname = meta.parameters{i+1}.name;
+                if length(psize) > 2
+                    % TODO: Generalize to handle more than 3-D?
+                    warning(sprintf('\nParameter %s has more than 3 dimensions.  Plotting only first 3.',name));
+                end
+                % Parameter is stored as N-D matrix with rows of time.
+                % Loop over 3rd dimension.
+                for j = 1:psize(2)
+                    tmp   = getfield(data,pname);
+                    datar = setfield(data,pname,tmp(:,:,j)); % Extracts tmp(:,:,j,1,1,...)
+                    metar = setfield(meta,'size',psize(1));
+                    metar.parameters{i+1}.label = sprintf('%s(:,:,%d)',pname,j);
+                    hapiplot(datar,metar,i);
+                end
+            end
         else
-            % A string or isotime parameter that is an array
+            % A 2-D string or isotime parameter
+            % (e.g., a time series that is a vector of strings).
             name  = meta.parameters{i+1}.name;
-            comps = getfield(data,name); % Components of array
+            comps = getfield(data,name); % comps is a cell array
             datar = data;
             metar = meta;
+            if ~isfield(meta.parameters{i+1},'size');
+                metar.parameters{i+1}.size = [1];
+            end
             for j = 1:length(comps)
-                datar = setfield(datar,name,comps{j}); % Reduced data
-                metar.parameters{i+1}.label = [name,' element ',num2str(j)];
-                % Plot each component separately.
+                datar = setfield(datar,name,comps{j}); % Reduced data is a matrix of strings.
+                % Create a field "label" that identifies component.
+                metar.parameters{i+1}.label = sprintf('%s(:,%d)',name,j);
+                % Plot each component separately and pass component string
+                % for file name.
                 hapiplot(datar,metar,i);
             end    
         end
@@ -31,7 +86,7 @@ end
 
 pname = meta.parameters{pn+1}.name;  % Parameter name
 if isfield(meta.parameters{pn+1},'label')
-  % Parameter name for string or isotime arrays
+    % Parameter name for string or isotime arrays
     label = meta.parameters{pn+1}.label;
 else
     label = pname;
@@ -40,7 +95,7 @@ end
 % Output file name.
 fname = sprintf('%s_%s_%s_%s',...
                 meta.x_.dataset,...
-                pname,...
+                label,...
                 regexprep(meta.x_.time_min,'-|:\.|Z',''),...
                 regexprep(meta.x_.time_max,'-|:|\.|Z',''));
 
@@ -94,11 +149,14 @@ for i = 1:length(fhs)
     end
 end
 if ~exist('fh','var')
-    fh = figure();
+    fh = figure();clf;
     set(fh,'Name',label);
 end
 
 gca;hold on; % Force axes to appear so they can be labeled.
+set(findall(gcf,'-property','FontSize'),'FontSize',16)
+set(findall(gcf,'-property','FontName'),'FontName','Times New Roman')
+
 if (time(1) - time(1) <= 1)
     % Show date in x-label b/c because datetick does not
     % show date if <= one day of data.
@@ -111,7 +169,7 @@ th = title(tstr);
 % Interpreter = none: Don't interpret underscore in name as subscript
 set(th,'Interpreter','none','FontWeight','normal');
 
-if ~isfield(meta.parameters{pn+1},'bins')
+if ~isfield(meta.parameters{pn+1},'bins') && meta.parameters{pn+1}.size(1) < 10
     % Plot parameter as one or more time series
 
     ptype = meta.parameters{pn+1}.type;
@@ -120,10 +178,21 @@ if ~isfield(meta.parameters{pn+1},'bins')
         y = iso2mldn(y);
     end
     
+    tight = 1;
     if strcmp(ptype,'string')
         [ustrs,ia,ib] = unique(y,'rows');
         y = ib;
-        set(gca,'YTick',[1:length(ia)]);
+        yt = [1:length(ia)];
+        if (length(ia) > 10)
+            dy = floor(length(ia)/10);
+            yt = [1:dy:length(ia)];
+            if yt(end) ~= length(ia)
+                yt = [yt,yt(end)+dy];
+                tight = 0;
+            end
+        end
+        set(gca,'YTick',yt);
+        set(gca,'YLim',[1,yt(end)]);
         set(gca,'YTickLabel',ustrs);
     end
     
@@ -153,7 +222,7 @@ if ~isfield(meta.parameters{pn+1},'bins')
     if length(punits) > 0
         yh = ylabel(sprintf('%s [%s]',label,punits));
     else
-        yh = ylabel(pname);
+        yh = ylabel(label);
     end
     if strcmp(ptype,'isotime')
         datetick('y');
@@ -170,34 +239,40 @@ if ~isfield(meta.parameters{pn+1},'bins')
     
     if size(y,2) > 1
         for i = 1:size(y,2)
-            legstr{i} = sprintf('Component %d',i);
+            legstr{i} = sprintf('Column %d',i);
         end
         legend(legstr);
     end
     grid on;
-    axis tight;
+    if tight,axis tight;end
     box on;
 else
     % Plot parameter as spectrogram
 
-    binname = meta.parameters{pn+1}.bins.name;
+    if isfield(meta.parameters{pn+1},'bins')
+        binname = meta.parameters{pn+1}.bins.name;
+        if isfield(meta.parameters{pn+1}.bins,'ranges')
+            binranges  = meta.parameters{pn+1}.bins.ranges;
+            warning('Parameter has bin ranges, but hapi_plot will not use them.');
+        end
+        if isfield(meta.parameters{pn+1}.bins,'centers')
+            bincenters  = meta.parameters{pn+1}.bins.centers;
+        end
+        if exist('binranges','var') && ~exist('bincenters','var')
+            warning('Parameter has bin ranges, but hapi_plot will use average as center location of ranges for bin.\n');        
+        end
 
-    if isfield(meta.parameters{pn+1}.bins,'ranges')
-        binranges  = meta.parameters{pn+1}.bins.ranges;
-        warning('Parameter has bin ranges, but hapi_plot will not use them.\n');
-    end
-    if isfield(meta.parameters{pn+1}.bins,'centers')
-        bincenters  = meta.parameters{pn+1}.bins.centers;
-    end
-    if exist('binranges','var') && ~exist('bincenters','var')
-        warning('Parameter has bin ranges, but hapi_plot will use average as center location of ranges for bin.\n');        
-    end
-
-    if isfield(meta.parameters{pn+1}.bins,'units')
-        binunits = meta.parameters{pn+1}.bins.units;
+        if isfield(meta.parameters{pn+1}.bins,'units')
+            binunits = meta.parameters{pn+1}.bins.units;
+        else
+            binunits = '';
+        end
     else
+        binname = 'Column';
+        bincenters = [1:meta.parameters{pn+1}.size(1)];
         binunits = '';
     end
+
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Determine if y scale should be log (not well tested).
@@ -251,7 +326,7 @@ else
     
     % Set colorbar title
     if length(punits) > 0
-        cbstr = sprintf('%s [%s]',pname,punits);
+        cbstr = sprintf('%s [%s]',label,punits);
         title(cbh,cbstr);
     else
         title(cbh,binname);
@@ -281,5 +356,43 @@ fnamepng = ['./hapi-figures/',fname,'.png'];
 fnamepdf = ['./hapi-figures/',fname,'.pdf'];
 print('-dpng',fnamepng);
 fprintf('hapiplot.m: Wrote %s\n',fnamepng);
-print('-dpdf',fnamepdf);
-fprintf('hapiplot.m: Wrote %s\n',fnamepdf);
+%print('-dpdf',fnamepdf);
+%fprintf('hapiplot.m: Wrote %s\n',fnamepdf);
+
+
+function dn = iso2mldn(datestr)
+
+% For converting a isotime parameter to a MATLAB date-time.
+% Not well tested.
+datefmt = regexprep(datestr(1,:),'Z$','');
+if ~isempty(regexp(datefmt,'^[0-9]{4}-[0-9]{2}-'));
+    datestrtype = 1;
+    datefmt = regexprep(datefmt,'^[0-9]{4}-','yyyy-');
+    datefmt = regexprep(datefmt,'yyyy-[0-9][0-9]-','yyyy-mm-');
+end
+if ~isempty(regexp(datefmt,'^[0-9]{4}-[0-9]{3}-'));
+    datestrtype = 2;
+end
+
+datefmt = regexprep(datefmt,'yyyy-mm-[0-9][0-9]T','yyyy-mm-ddT');
+datefmt = regexprep(datefmt,'yyyy-mm-ddT[0-9][0-9]','yyyy-mm-ddTHH');
+datefmt = regexprep(datefmt,'yyyy-mm-ddTHH:[0-9][0-9]','yyyy-mm-ddTHH:MM');
+datefmt = regexprep(datefmt,'yyyy-mm-ddTHH:MM:[0-9][0-9]','yyyy-mm-ddTHH:MM:SS');
+
+n = length('yyyy-mm-ddTHH:MM:SS');
+l = length(datefmt);
+ms = 0;
+if l > n
+    if strcmp(datestr(1,end),'Z')
+        ms = str2num(datestr(:,n+1:end-1))*10^(3+n-l)
+    else
+        ms = str2num(datestr(:,n+1:end))*10^(3+n-l)
+    end
+    datefmt = regexprep(datefmt,'yyyy-mm-ddTHH:MM:SS.*','yyyy-mm-ddTHH:MM:SS');
+    if (ms < 0.001)
+        warning('Parameter time resolution is less than 1 ms. Axis labels will not be correct at this time scale.');
+    end
+    dn = datenum(datestr,datefmt) + ms/(86400);
+else
+    dn = datenum(datestr,datefmt);
+end
