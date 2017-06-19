@@ -1,15 +1,15 @@
 Contents
 --------
 
--   [Use local TestData server if it is running.](#1)
--   [Download hapi.m if not found.](#2)
--   [Scalar ephemeris from SSCWeb](#3)
--   [Two scalars from SSCWeb](#4)
--   [Scalar scalar from SSCWeb](#5)
+-   [Download hapi.m if not found.](#1)
+-   [Scalar ephemeris from SSCWeb](#2)
+-   [Two scalars from SSCWeb](#3)
+-   [Scalar string from SSCWeb](#4)
+-   [Vector from CDAWeb](#5)
 -   [Jeremy's garage temperatures](#6)
 -   [Spectra from CASSINIA S/C](#7)
--   [Test Data: Vector](#8)
--   [Test Data: 10-element vector](#9)
+-   [Test Data: Vector (size = \[3\] in HAPI notation)](#8)
+-   [Test Data: 10-element vector (size = \[10\] in HAPI notation)](#9)
 -   [Test Data: 3x3 transformation matrix as 1-D HAPI array](#10)
 -   [Test Data: 3x3 transformation matrix as 2-D HAPI array](#11)
 -   [Test Data: Scalar string parameter](#12)
@@ -18,29 +18,13 @@ Contents
 -   [Test Data: Parameter that is two vectors](#15)
 -   [Test Data: Vector of strings](#16)
 -   [Test Data: 100-element time series with no bins](#17)
--   [Test Data: Vector of strings](#18)
--   [Test Data: All parameters](#19)
--   [Request list of known HAPI servers](#20)
--   [List datasets from a server](#21)
--   [Get metadata for all parameters in a dataset](#22)
--   [Get parameter metadata for one parameter in a dataset](#23)
+-   [Test Data: All parameters](#18)
+-   [Request list of known HAPI servers](#19)
+-   [List datasets from a server](#20)
+-   [Get metadata for all parameters in a dataset](#21)
+-   [Get parameter metadata for one parameter in a dataset](#22)
 
-Use local TestData server if it is running.<span id="1"></span>
----------------------------------------------------------------
-
-Remove this for production.
-
-``` codeinput
-url = 'http://localhost:8999/hapi';
-[str,stat]  = urlread(url);
-if stat ~= 1 % Not runing test server locally.  Use public version.
-    url = 'http://mag.gmu.edu/TestData/hapi';
-end
-
-use_cache = 0;
-```
-
-Download hapi.m if not found.<span id="2"></span>
+Download hapi.m if not found.<span id="1"></span>
 -------------------------------------------------
 
 ``` codeinput
@@ -50,7 +34,7 @@ if exist('hapi','file') ~= 2
 end
 ```
 
-Scalar ephemeris from SSCWeb<span id="3"></span>
+Scalar ephemeris from SSCWeb<span id="2"></span>
 ------------------------------------------------
 
 ``` codeinput
@@ -59,7 +43,7 @@ dataset    = 'ace';
 parameters = 'X_TOD';
 start      = '2012-02-01';
 stop       = '2012-02-02';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 % Get data and metadata
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
@@ -75,12 +59,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://tsds.org/get/SSCWeb/hapi/info?id=ace&parameters=X_TOD ... Done.
-Wrote hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD.json ...
-Downloading http://tsds.org/get/SSCWeb/hapi/data?id=ace&time.min=2012-02-01&time.max=2012-02-02&parameters=X_TOD ... Done.
-Reading hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD_20120201_20120202.csv ... Done.
-Parsing hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD_20120201_20120202.csv ... Done.
-Saving hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD_20120201_20120202.mat ... Done.
+Reading hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD_20120201_20120202.mat ... Done.
 
 data = 
 
@@ -120,7 +99,7 @@ hapiplot.m: Wrote ./hapi-figures/ace_X_TOD_20120201_20120202.png
 ```
 
 ![](hapi_demo_01.png)
-Two scalars from SSCWeb<span id="4"></span>
+Two scalars from SSCWeb<span id="3"></span>
 -------------------------------------------
 
 ``` codeinput
@@ -129,7 +108,7 @@ dataset    = 'ace';
 parameters = 'X_TOD,Y_TOD';
 start      = '2012-02-01';
 stop       = '2012-02-02';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 % Get data and metadata
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
@@ -145,12 +124,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://tsds.org/get/SSCWeb/hapi/info?id=ace&parameters=X_TOD,Y_TOD ... Done.
-Wrote hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD-Y_TOD.json ...
-Downloading http://tsds.org/get/SSCWeb/hapi/data?id=ace&time.min=2012-02-01&time.max=2012-02-02&parameters=X_TOD,Y_TOD ... Done.
-Reading hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD-Y_TOD_20120201_20120202.csv ... Done.
-Parsing hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD-Y_TOD_20120201_20120202.csv ... Done.
-Saving hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD-Y_TOD_20120201_20120202.mat ... Done.
+Reading hapi-data/tsds.org_get_SSCWeb_hapi/ace_X_TOD-Y_TOD_20120201_20120202.mat ... Done.
 
 data = 
 
@@ -201,7 +175,7 @@ hapiplot.m: Wrote ./hapi-figures/ace_Y_TOD_20120201_20120202.png
 ```
 
 ![](hapi_demo_02.png) ![](hapi_demo_03.png)
-Scalar scalar from SSCWeb<span id="5"></span>
+Scalar string from SSCWeb<span id="4"></span>
 ---------------------------------------------
 
 ``` codeinput
@@ -210,7 +184,7 @@ dataset    = 'ace';
 parameters = 'LT_GEO';
 start      = '2012-02-01';
 stop       = '2012-02-02';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 % Get data and metadata
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
@@ -226,12 +200,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://tsds.org/get/SSCWeb/hapi/info?id=ace&parameters=LT_GEO ... Done.
-Wrote hapi-data/tsds.org_get_SSCWeb_hapi/ace_LT_GEO.json ...
-Downloading http://tsds.org/get/SSCWeb/hapi/data?id=ace&time.min=2012-02-01&time.max=2012-02-02&parameters=LT_GEO ... Done.
-Reading hapi-data/tsds.org_get_SSCWeb_hapi/ace_LT_GEO_20120201_20120202.csv ... Done.
-Parsing hapi-data/tsds.org_get_SSCWeb_hapi/ace_LT_GEO_20120201_20120202.csv ... Done.
-Saving hapi-data/tsds.org_get_SSCWeb_hapi/ace_LT_GEO_20120201_20120202.mat ... Done.
+Reading hapi-data/tsds.org_get_SSCWeb_hapi/ace_LT_GEO_20120201_20120202.mat ... Done.
 
 data = 
 
@@ -272,10 +241,84 @@ hapiplot.m: Wrote ./hapi-figures/ace_LT_GEO(:,1)_20120201_20120202.png
 ```
 
 ![](hapi_demo_04.png)
+Vector from CDAWeb<span id="5"></span>
+--------------------------------------
+
+Had to modify hapi.m to work because /info?id=AC\_H0\_MFI&parameters=BGSEc returns all parameters, not just BGSEc. Also note the metadata has the wrong fill value of "-9.999999848243207E30". It should be "-1e31" and a correction was applied below.
+
+``` codeinput
+server     = 'https://voyager.gsfc.nasa.gov/hapiproto/hapi';
+dataset    = 'AC_H0_MFI';
+parameters = 'BGSEc';
+start      = '2002-01-01';
+stop       = '2002-01-02';
+opts       = struct('logging',1,'use_cache',0);
+
+% Get data and metadata
+[data,meta] = hapi(server,dataset,parameters,start,stop,opts);
+
+meta.parameters{2}.fill = '-1e31'; % Correct fill value.
+% Display information
+data
+meta
+fprintf('meta.parameters = ');
+meta.parameters{:}
+meta.parameters{1}.name = 'Time'; % Fix error in metadata.
+% Plot
+hapiplot(data,meta)
+```
+
+``` codeoutput
+Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/info?id=AC_H0_MFI&parameters=BGSEc ... Warning: Server returned too many parameters in /info
+request 
+Done.
+Wrote hapi-data/voyager.gsfc.nasa.gov_hapiproto_hapi/AC_H0_MFI_BGSEc.json ...
+Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/data?id=AC_H0_MFI&time.min=2002-01-01&time.max=2002-01-02&parameters=BGSEc ... Done.
+Reading hapi-data/voyager.gsfc.nasa.gov_hapiproto_hapi/AC_H0_MFI_BGSEc_20020101_20020102.csv ... Done.
+Parsing hapi-data/voyager.gsfc.nasa.gov_hapiproto_hapi/AC_H0_MFI_BGSEc_20020101_20020102.csv ... Done.
+Saving hapi-data/voyager.gsfc.nasa.gov_hapiproto_hapi/AC_H0_MFI_BGSEc_20020101_20020102.mat ... Done.
+
+data = 
+
+              Time: [5400x23 char]
+    DateTimeVector: [5400x7 int32]
+             BGSEc: [5400x3 double]
+
+
+meta = 
+
+            HAPI: '1.0'
+    creationDate: '2017/06/19 12:44:05'
+      parameters: {[1x1 struct]  [1x1 struct]}
+       startDate: '1997-09-02T00:00:12'
+        stopDate: '2017-04-11T23:59:53'
+              x_: [1x1 struct]
+
+meta.parameters = 
+ans = 
+
+      name: 'Time'
+      type: 'isotime'
+    length: 24
+
+
+ans = 
+
+           name: 'BGSEc'
+           type: 'double'
+          units: 'nT'
+           fill: '-1e31'
+    description: 'Magnetic Field Vector in GSE Cartesian coordinates (16 sec)'
+           size: 3
+
+hapiplot.m: Wrote ./hapi-figures/AC_H0_MFI_BGSEc_20020101_20020102.png
+```
+
+![](hapi_demo_05.png)
 Jeremy's garage temperatures<span id="6"></span>
 ------------------------------------------------
 
-He is what we call, euphemistically, 'Temperature involved' Note that hapi.m needed to allow 'float' as a data type for this to work.
+He is what we call, euphemistically, 'Temperature involved'. Note that hapi.m needed to allow 'float' as a data type for this to work.
 
 ``` codeinput
 server     = 'http://jfaden.net/HapiServerDemo/hapi';
@@ -340,7 +383,7 @@ ans =
 hapiplot.m: Wrote ./hapi-figures/0B000800408DD710_Temperature_20170617T21:20:32.052_20170618T212032520.png
 ```
 
-![](hapi_demo_05.png)
+![](hapi_demo_06.png)
 Spectra from CASSINIA S/C<span id="7"></span>
 ---------------------------------------------
 
@@ -352,7 +395,7 @@ dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
 parameters = 'A';
 start      = '2002-01-01';
 stop       = '2002-01-02T00:06:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 % Get data and metadata
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
@@ -368,12 +411,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://datashop.elasticbeanstalk.com/hapi/info?id=CASSINI_LEMMS_PHA_CHANNEL_1_SEC&parameters=A ... Done.
-Wrote hapi-data/datashop.elasticbeanstalk.com_hapi/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A.json ...
-Downloading http://datashop.elasticbeanstalk.com/hapi/data?id=CASSINI_LEMMS_PHA_CHANNEL_1_SEC&time.min=2002-01-01&time.max=2002-01-02T00:06:00&parameters=A ... Done.
-Reading hapi-data/datashop.elasticbeanstalk.com_hapi/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A_20020101_20020102T000600.csv ... Done.
-Parsing hapi-data/datashop.elasticbeanstalk.com_hapi/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A_20020101_20020102T000600.csv ... Done.
-Saving hapi-data/datashop.elasticbeanstalk.com_hapi/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A_20020101_20020102T000600.mat ... Done.
+Reading hapi-data/datashop.elasticbeanstalk.com_hapi/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A_20020101_20020102T000600.mat ... Done.
 
 data = 
 
@@ -417,23 +455,24 @@ ans =
     description: 'high energy resolution LEMMS spectrum of A channels'
            bins: [1x1 struct]
 
-Warning: Parameter has bin ranges, but hapi_plot will not use them. 
+Warning: Parameter has bin ranges, but hapi_plot will
+not use them. 
 hapiplot.m: Wrote ./hapi-figures/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A_20020101_20020102T000600.png
 ```
 
-![](hapi_demo_06.png)
-Test Data: Vector<span id="8"></span>
--------------------------------------
+![](hapi_demo_07.png)
+Test Data: Vector (size = \[3\] in HAPI notation)<span id="8"></span>
+---------------------------------------------------------------------
 
 HAPIPLOT infers that this a parameter that should be displayed as multiple time series because the number of components of the vector is &lt; 10. Note that the metadata does not provide labels for the individual components of the vector, so "Column \#" is used in the legend. HAPI metadata should include an option to add column labels.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'vector';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -450,12 +489,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=vector ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_vector.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=vector ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_vector_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_vector_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_vector_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_vector_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -472,85 +506,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
-               HAPI: '1.1'
-             status: [1x1 struct]
-                 x_: [1x1 struct]
-
-meta.parameters = 
-ans = 
-
-      name: 'Time'
-      type: 'isotime'
-     units: 'UTC'
-      fill: []
-    length: 24
-
-
-ans = 
-
-           name: 'vector'
-           type: 'double'
-          units: 'm'
-           fill: '-1e31'
-           size: 3
-    description: 'Each component is a sine wave with a 600 s period with d...'
-
-hapiplot.m: Wrote ./hapi-figures/dataset1_vector_19700101_19700101T000100.png
-```
-
-![](hapi_demo_07.png)
-Test Data: 10-element vector<span id="9"></span>
-------------------------------------------------
-
-HAPIPLOT infers that this a parameter that should be displayed as a spectra because the number of vector elements is &gt; 9. Note that the metadata does not provide labels for the individual components of the vector, so "Column \#" is used in the legend. HAPI metadata should include an option to add column labels.
-
-``` codeinput
-server     = url;
-dataset    = 'dataset1';
-parameters = 'vector';
-start      = '1970-01-01';
-stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
-
-[data,meta] = hapi(server, dataset, parameters, start, stop, opts);
-
-% Display information
-data
-meta
-fprintf('meta.parameters = ');
-meta.parameters{:}
-
-% Plot
-hapiplot(data,meta)
-% or
-% hapiplot(data,meta,'vector')
-```
-
-``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=vector ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_vector.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=vector ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_vector_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_vector_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_vector_19700101_19700101T000100.mat ... Done.
-
-data = 
-
-              Time: [60x23 char]
-    DateTimeVector: [60x7 int32]
-            vector: [60x3 double]
-
-
-meta = 
-
-          startDate: '1970-01-01'
-           stopDate: '2016-12-31'
-    sampleStartDate: '1970-01-01'
-     sampleStopDate: '1970-01-01T00:00:09'
-     x_maxDurations: [1x1 struct]
-            cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -578,18 +534,18 @@ hapiplot.m: Wrote ./hapi-figures/dataset1_vector_19700101_19700101T000100.png
 ```
 
 ![](hapi_demo_08.png)
-Test Data: 3x3 transformation matrix as 1-D HAPI array<span id="10"></span>
----------------------------------------------------------------------------
+Test Data: 10-element vector (size = \[10\] in HAPI notation)<span id="9"></span>
+---------------------------------------------------------------------------------
 
-HAPIPLOT infers that this a parameter that should be displayed as a spectra because the number of components is &gt;= 9. Note that the metadata does not provide bins so the y-labels are "Column \#'. In this case the data provider indented to provide a time series of rotation transformation matrices (using Javascript array notation) \[Txx, Txy, Txz, Tyx, Tyy, Tyz, Tzx, Tzy, Tzz\]. HAPI metadata should include the ability to provide these labels.
+HAPIPLOT infers that this a parameter that should be displayed as a spectra because the number of vector elements is &gt; 9. Note that the metadata does not provide labels for the individual components of the vector, so "Column" is used as the y-axis label.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi'; ;
 dataset    = 'dataset1';
-parameters = 'transform';
+parameters = 'vector';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -602,16 +558,84 @@ meta.parameters{:}
 % Plot
 hapiplot(data,meta)
 % or
-% hapiplot(data,meta,'transformvector')
+% hapiplot(data,meta,'vector')
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=transform ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_transform.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=transform ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_transform_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_transform_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_transform_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_vector_19700101_19700101T000100.mat ... Done.
+
+data = 
+
+              Time: [60x23 char]
+    DateTimeVector: [60x7 int32]
+            vector: [60x3 double]
+
+
+meta = 
+
+          startDate: '1970-01-01'
+           stopDate: '2016-12-31'
+    sampleStartDate: '1970-01-01'
+     sampleStopDate: '1970-01-01T00:00:09'
+     x_maxDurations: [1x1 struct]
+            cadence: 'PT1S'
+         parameters: {[1x1 struct]  [1x1 struct]}
+               HAPI: '1.1'
+             status: [1x1 struct]
+                 x_: [1x1 struct]
+
+meta.parameters = 
+ans = 
+
+      name: 'Time'
+      type: 'isotime'
+     units: 'UTC'
+      fill: []
+    length: 24
+
+
+ans = 
+
+           name: 'vector'
+           type: 'double'
+          units: 'm'
+           fill: '-1e31'
+           size: 3
+    description: 'Each component is a sine wave with a 600 s period with d...'
+
+hapiplot.m: Wrote ./hapi-figures/dataset1_vector_19700101_19700101T000100.png
+```
+
+![](hapi_demo_09.png)
+Test Data: 3x3 transformation matrix as 1-D HAPI array<span id="10"></span>
+---------------------------------------------------------------------------
+
+HAPIPLOT infers that this a parameter that should be displayed as a spectra because the number of components is &gt;= 9. Note that the metadata does not provide bins so the y-labels are "Column \#'. In this case the data provider indented to provide a time series of rotation transformation matrices (using Javascript array notation) \[Txx, Txy, Txz, Tyx, Tyy, Tyz, Tzx, Tzy, Tzz\]. HAPI metadata should include the ability to provide these labels.
+
+``` codeinput
+server     = 'http://mag.gmu.edu/TestData/hapi';
+dataset    = 'dataset1';
+parameters = 'transform';
+start      = '1970-01-01';
+stop       = '1970-01-01T00:01:00';
+opts       = struct('logging',1);
+
+[data,meta] = hapi(server, dataset, parameters, start, stop, opts);
+
+% Display information
+data
+meta
+fprintf('meta.parameters = ');
+meta.parameters{:}
+
+% Plot
+hapiplot(data,meta)
+% or
+% hapiplot(data,meta,'transform')
+```
+
+``` codeoutput
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_transform_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -628,7 +652,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -655,19 +679,19 @@ ans =
 hapiplot.m: Wrote ./hapi-figures/dataset1_transform_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_09.png)
+![](hapi_demo_10.png)
 Test Data: 3x3 transformation matrix as 2-D HAPI array<span id="11"></span>
 ---------------------------------------------------------------------------
 
-HAPIPLOT displays each layer of the matrix as three time series with y-labels tranformmult(:,:,1), transformmulti(:,:,2), and transformmulti(:,:,3) and legend labels of "Column \#", where \# = 1, 2, or 3. In this case the data provided intended to provided a time series of rotation matrices with labels (using Javascript array notation) \[\[Txx,Txy,Txz\],\[Tyx,Tyy,Tyz\],\[Tzx,Tzy,Tzz\]\]. HAPI should include the ability to provide these labels.
+HAPIPLOT displays each layer of the matrix as three time series with y-labels tranformmulti(:,:,1), transformmulti(:,:,2), and transformmulti(:,:,3) and legend labels of "Column \#", where \# = 1, 2, or 3. In this case the data provided intended to provided a time series of rotation matrices with labels (using HAPI array notation) \[\['Txx','Txy','Txz'\],\['Tyx','Tyy','Tyz'\],\['Tzx','Tzy','Tzz'\]\]. HAPI should include the ability to provide these labels.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'transformmulti';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -684,12 +708,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=transformmulti ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_transformmulti.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=transformmulti ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_transformmulti_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_transformmulti_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_transformmulti_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_transformmulti_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -706,7 +725,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -735,19 +754,19 @@ hapiplot.m: Wrote ./hapi-figures/dataset1_transformmulti(:,:,2)_19700101_1970010
 hapiplot.m: Wrote ./hapi-figures/dataset1_transformmulti(:,:,3)_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_10.png) ![](hapi_demo_11.png) ![](hapi_demo_12.png)
+![](hapi_demo_11.png) ![](hapi_demo_12.png) ![](hapi_demo_13.png)
 Test Data: Scalar string parameter<span id="12"></span>
 -------------------------------------------------------
 
-Demonstrating how HAPIPLOT handles these type of parameter.
+Demonstrating how HAPIPLOT handles this type of parameter.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'scalarstr';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -763,12 +782,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=scalarstr ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_scalarstr.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=scalarstr ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_scalarstr_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_scalarstr_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_scalarstr_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_scalarstr_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -785,7 +799,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -812,19 +826,19 @@ ans =
 hapiplot.m: Wrote ./hapi-figures/dataset1_scalarstr(:,1)_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_13.png)
+![](hapi_demo_14.png)
 Test Data: Scalar isotime parameter<span id="13"></span>
 --------------------------------------------------------
 
 HAPIPLOT converts the isotime string to a MATLAB DATENUM to create y-axis labels.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'scalariso';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -840,12 +854,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=scalariso ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_scalariso.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=scalariso ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_scalariso_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_scalariso_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_scalariso_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_scalariso_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -862,7 +871,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -889,19 +898,19 @@ ans =
 hapiplot.m: Wrote ./hapi-figures/dataset1_scalariso(:,1)_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_14.png)
+![](hapi_demo_15.png)
 Test Data: Scalar integer parameter (with proposed category map)<span id="14"></span>
 -------------------------------------------------------------------------------------
 
-Here we have a time series of integers that are intended to communicate a status represented by a string. The metadata includes a map from an integer to a string, and this map is used to generate y-axis labels.
+A time series of integers intended to communicate a status represented by a string. The metadata includes a (non-HAPI standard) map from an integer to a string, and this map is used to generate y-axis labels.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'scalarcats';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -917,12 +926,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=scalarcats ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_scalarcats.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=scalarcats ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_scalarcats_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_scalarcats_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_scalarcats_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_scalarcats_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -939,7 +943,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -966,19 +970,19 @@ ans =
 hapiplot.m: Wrote ./hapi-figures/dataset1_scalarcats_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_15.png)
+![](hapi_demo_16.png)
 Test Data: Parameter that is two vectors<span id="15"></span>
 -------------------------------------------------------------
 
-HAPIPLOT creates two time series plots in this case and labels the first as vectormulti(:,:,1) and second as vectormulti(:,:,2).
+HAPIPLOT creates two time series plots in this case and labels the first using MATLAB notation as vectormulti(:,:,1) and second as vectormulti(:,:,2).
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'vectormulti';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -994,12 +998,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=vectormulti ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_vectormulti.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=vectormulti ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_vectormulti_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_vectormulti_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_vectormulti_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_vectormulti_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -1016,7 +1015,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -1044,19 +1043,19 @@ hapiplot.m: Wrote ./hapi-figures/dataset1_vectormulti(:,:,1)_19700101_19700101T0
 hapiplot.m: Wrote ./hapi-figures/dataset1_vectormulti(:,:,2)_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_16.png) ![](hapi_demo_17.png)
+![](hapi_demo_17.png) ![](hapi_demo_18.png)
 Test Data: Vector of strings<span id="16"></span>
 -------------------------------------------------
 
-In this unusual dataset, 3-vector of strings is given. HAPIPLOT creates three time series plots, one for each vector component.
+In this unusual dataset, 3-vector (size = \[3\] in HAPI notation) of strings is given. HAPIPLOT creates three time series plots, one for each vector component.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi';
 dataset    = 'dataset1';
 parameters = 'vectorstr';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -1072,12 +1071,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=vectorstr ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_vectorstr.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=vectorstr ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_vectorstr_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_vectorstr_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_vectorstr_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_vectorstr_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -1094,7 +1088,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -1124,19 +1118,19 @@ hapiplot.m: Wrote ./hapi-figures/dataset1_vectorstr(:,2)_19700101_19700101T00010
 hapiplot.m: Wrote ./hapi-figures/dataset1_vectorstr(:,3)_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_18.png) ![](hapi_demo_19.png) ![](hapi_demo_20.png)
+![](hapi_demo_19.png) ![](hapi_demo_20.png) ![](hapi_demo_21.png)
 Test Data: 100-element time series with no bins<span id="17"></span>
 --------------------------------------------------------------------
 
 HAPIPLOT assumes that this is best plotted as a spectra because the number of elements is greater than 9.
 
 ``` codeinput
-server     = url;
+server     = 'http://mag.gmu.edu/TestData/hapi';
 dataset    = 'dataset1';
 parameters = 'spectranobins';
 start      = '1970-01-01';
 stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -1152,12 +1146,7 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=spectranobins ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_spectranobins.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=spectranobins ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_spectranobins_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_spectranobins_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_spectranobins_19700101_19700101T000100.mat ... Done.
+Reading hapi-data/mag.gmu.edu_TestData_hapi/dataset1_spectranobins_19700101_19700101T000100.mat ... Done.
 
 data = 
 
@@ -1174,7 +1163,7 @@ meta =
      sampleStopDate: '1970-01-01T00:00:09'
      x_maxDurations: [1x1 struct]
             cadence: 'PT1S'
-         parameters: {2x1 cell}
+         parameters: {[1x1 struct]  [1x1 struct]}
                HAPI: '1.1'
              status: [1x1 struct]
                  x_: [1x1 struct]
@@ -1201,113 +1190,33 @@ ans =
 hapiplot.m: Wrote ./hapi-figures/dataset1_spectranobins_19700101_19700101T000100.png
 ```
 
-![](hapi_demo_21.png)
-Test Data: Vector of strings<span id="18"></span>
--------------------------------------------------
-
-In this unusual dataset, 3-vector of strings is given. HAPIPLOT creates three time series plots, one for each vector component.
-
-``` codeinput
-server     = url;
-dataset    = 'dataset1';
-parameters = 'vectorstr';
-start      = '1970-01-01';
-stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
-
-[data,meta] = hapi(server, dataset, parameters, start, stop, opts);
-
-% Display information
-data
-meta
-fprintf('meta.parameters = ');
-meta.parameters{:}
-
-hapiplot(data,meta)
-% or
-% hapiplot(data,meta,'vectorstr')
-```
-
-``` codeoutput
-Downloading http://localhost:8999/hapi/info?id=dataset1&parameters=vectorstr ... Done.
-Wrote hapi-data/localhost:8999_hapi/dataset1_vectorstr.json ...
-Downloading http://localhost:8999/hapi/data?id=dataset1&time.min=1970-01-01&time.max=1970-01-01T00:01:00&parameters=vectorstr ... Done.
-Reading hapi-data/localhost:8999_hapi/dataset1_vectorstr_19700101_19700101T000100.csv ... Done.
-Parsing hapi-data/localhost:8999_hapi/dataset1_vectorstr_19700101_19700101T000100.csv ... Done.
-Saving hapi-data/localhost:8999_hapi/dataset1_vectorstr_19700101_19700101T000100.mat ... Done.
-
-data = 
-
-              Time: [60x23 char]
-    DateTimeVector: [60x7 int32]
-         vectorstr: {[60x3 char]  [60x3 char]  [60x3 char]}
-
-
-meta = 
-
-          startDate: '1970-01-01'
-           stopDate: '2016-12-31'
-    sampleStartDate: '1970-01-01'
-     sampleStopDate: '1970-01-01T00:00:09'
-     x_maxDurations: [1x1 struct]
-            cadence: 'PT1S'
-         parameters: {2x1 cell}
-               HAPI: '1.1'
-             status: [1x1 struct]
-                 x_: [1x1 struct]
-
-meta.parameters = 
-ans = 
-
-      name: 'Time'
-      type: 'isotime'
-     units: 'UTC'
-      fill: []
-    length: 24
-
-
-ans = 
-
-           name: 'vectorstr'
-           type: 'string'
-          units: []
-           fill: []
-         length: 4
-           size: 3
-    description: 'Status checks result; P = Pass, F = Fail'
-
-hapiplot.m: Wrote ./hapi-figures/dataset1_vectorstr(:,1)_19700101_19700101T000100.png
-hapiplot.m: Wrote ./hapi-figures/dataset1_vectorstr(:,2)_19700101_19700101T000100.png
-hapiplot.m: Wrote ./hapi-figures/dataset1_vectorstr(:,3)_19700101_19700101T000100.png
-```
-
-![](hapi_demo_22.png) ![](hapi_demo_23.png) ![](hapi_demo_24.png)
-Test Data: All parameters<span id="19"></span>
+![](hapi_demo_22.png)
+Test Data: All parameters<span id="18"></span>
 ----------------------------------------------
 
 If parameters='', HAPI() get all parameters in the dataset and HAPIPLOT creates (one or more, as needed) plots for each individually. This demo works, but is suppressed.
 
 ``` codeinput
-if (0)
-server     = 'http://mag.gmu.edu/TestData/hapi';
-dataset    = 'dataset1';
-parameters = '';
-start      = '1970-01-01';
-stop       = '1970-01-01T00:01:00';
-opts       = struct('logging',1,'use_cache',use_cache);
+    if (0)
+    server     = 'http://mag.gmu.edu/TestData/hapi';
+    dataset    = 'dataset1';
+    parameters = '';
+    start      = '1970-01-01';
+    stop       = '1970-01-01T00:01:00';
+    opts       = struct('logging',1);
 
-[data,meta] = hapi(server, dataset, parameters, start, stop, opts);
+    [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
-data
-meta
-fprintf('meta.parameters = ');
-meta.parameters{:}
+    data
+    meta
+    fprintf('meta.parameters = ');
+    meta.parameters{:}
 
-hapiplot(data,meta)
+    hapiplot(data,meta)
 end
 ```
 
-Request list of known HAPI servers<span id="20"></span>
+Request list of known HAPI servers<span id="19"></span>
 -------------------------------------------------------
 
 ``` codeinput
@@ -1322,7 +1231,7 @@ Servers =
     'http://mag.gmu.edu/TestData/hapi'
 ```
 
-List datasets from a server<span id="21"></span>
+List datasets from a server<span id="20"></span>
 ------------------------------------------------
 
 ``` codeinput
@@ -1343,7 +1252,7 @@ metad =
      status: [1x1 struct]
 ```
 
-Get metadata for all parameters in a dataset<span id="22"></span>
+Get metadata for all parameters in a dataset<span id="21"></span>
 -----------------------------------------------------------------
 
 ``` codeinput
@@ -1359,13 +1268,15 @@ to search and explore parameters in this dataset from the <a href="http://mag.gm
 
 metap = 
 
-     startDate: '1970-01-01'
-      stopDate: '2016-12-31'
-       cadence: 'PT1M'
-    parameters: {13x1 cell}
+          startDate: '1970-01-01'
+           stopDate: '2016-12-31'
+    sampleStartDate: '1970-01-01'
+     sampleStopDate: '1970-01-01T00:00:10'
+            cadence: 'PT1M'
+         parameters: {13x1 cell}
 ```
 
-Get parameter metadata for one parameter in a dataset<span id="23"></span>
+Get parameter metadata for one parameter in a dataset<span id="22"></span>
 --------------------------------------------------------------------------
 
 ``` codeinput
@@ -1376,20 +1287,27 @@ metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{pn}.name)
 ```
 
 ``` codeoutput
+Warning: Server returned too many parameters in /info
+request 
+
 data = 
 
-     startDate: '1970-01-01'
-      stopDate: '2016-12-31'
-       cadence: 'PT1M'
-    parameters: {3x1 cell}
+          startDate: '1970-01-01'
+           stopDate: '2016-12-31'
+    sampleStartDate: '1970-01-01'
+     sampleStopDate: '1970-01-01T00:00:10'
+            cadence: 'PT1M'
+         parameters: {[1x1 struct]  [1x1 struct]  [1x1 struct]}
 
 
 metapr = 
 
-     startDate: '1970-01-01'
-      stopDate: '2016-12-31'
-       cadence: 'PT1M'
-    parameters: {3x1 cell}
+          startDate: '1970-01-01'
+           stopDate: '2016-12-31'
+    sampleStartDate: '1970-01-01'
+     sampleStopDate: '1970-01-01T00:00:10'
+            cadence: 'PT1M'
+         parameters: {[1x1 struct]  [1x1 struct]  [1x1 struct]}
 ```
 
 [Published with MATLAB® R2015a](http://www.mathworks.com/products/matlab/)

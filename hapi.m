@@ -4,10 +4,10 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   HAPI.m gets metadata and data from a <a href="https://github.com/hapi-server/">HAPI v1.1</a> compliant
 %   data server. See <a href="./html/hapi_demo.html">hapi_demo</a> for usage examples.
 %
-%   This is a command-line only interface.  For a GUI for browsing
-%   and searching servers, datasets, and parameters, see
-%   http://tsds.org/get/.  Select a catalog, dataset, parameter, and
-%   time range and then request a MATLAB script as an output.  A script
+%   This is a command-line only interface.  For a GUI for browsing and
+%   searching servers, datasets, and parameters, see http://tsds.org/get/.
+%   Select a catalog, dataset, parameter, and time range and then request a
+%   MATLAB script as an output.  A script including a call to this script
 %   will be generated that can be pasted onto the command line.
 %
 %   <a href="http://tsds.org/get/#catalog=SSCWeb&dataset=ace&parameters=X_TOD&start=-P2D&stop=2017-08-27&return=script&format=matlab">Example of search result</a>.
@@ -26,12 +26,13 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   Parameters can be a comma-separated string or cell array.
 %
 %   [Data,Meta] = HAPI(Server, Dataset, Parameters, Start, Stop) returns
-%   the data and metadata for for the requested parameters. Start and
-%   Stop are <a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> time stamps (YYYY-mm-DDTHH:MM:SS.FFF). If
-%   Parameters = '', all parameters are returned.  An extra field is
-%   added to the returned Data structure named DateTimeVector, which is
-%   a matrix with columns of Year, Month, Day, Hour, Minute, Second,
-%   that can be passed to DATENUM.
+%   the data and metadata for for the requested parameters. Start and Stop
+%   are <a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> time
+%   stamps (YYYY-mm-DDTHH:MM:SS.FFF in MATLAB notation). If Parameters =
+%   '', all parameters are returned.  An extra field is added to the
+%   returned Data structure named DateTimeVector, which is a matrix with
+%   columns of Year, Month, Day, Hour, Minute, Second, that can be passed
+%   to DATENUM.
 %
 %   Options are set by passing a structure as the last argument
 %   with fields
@@ -47,10 +48,10 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %     OPTS.use_cache    = 0;
 %     HAPI(...,OPTS)
 %
-%   Version 2017-05-26.
+%   Version 2017-06-18.
 %
 %   For bug reports and feature requests, see
-%   https://github.com/hapi-server/matlab-client/issues
+%   <a href="https://github.com/hapi-server/matlab-client/issues">https://github.com/hapi-server/matlab-client/issues</a>
 %
 %   See also HAPI_DEMO, DATENUM.
 
@@ -58,9 +59,6 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 % Author: R.S Weigel <rweigel@gmu.edu>
 % License: This is free and unencumbered software released into the public domain.
 % Repository: https://github.com/hapi-server/matlab-client.git
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% For bug reports and feature requests, see
-% https://github.com/hapi-server/matlab-client/issues
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -71,14 +69,14 @@ DOPTS = struct();
 DOPTS.update_script = 0;
 DOPTS.logging       = 0;
 DOPTS.cache_mlbin   = 1; % Save data requested in MATLAB binary for off-line use.
-DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) for debugging/sharing.
-DOPTS.use_cache     = 1; % Use cached MATLAB binary file associated with request if its exists.
-DOPTS.format        = 'csv'; % If 'csv', request for HAPI CSV will be made even if server supports HAPI Binary. 
+DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) for debugging.
+DOPTS.use_cache     = 1; % Use cached MATLAB binary file associated with request if found.
+DOPTS.format        = 'csv'; % If 'csv', request for HAPI CSV will be made even if server supports HAPI Binary. (For debugging.) 
 
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
 
-% TODO: These are not implemented.
+% Not implemented.
 %DOPTS.split_long    = 0; % Split long requests into chunks and fetch chunks.
 %DOPTS.parallel_req  = 0; % Use parallel requests for chunks.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -87,9 +85,9 @@ DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/matlab-clie
 % Extract options (TODO: find better way to do this.)
 nin = nargin;
 if exist('SERVER','var') && isstruct(SERVER),OPTS = SERVER;clear SERVER;end
-if exist('DATASET','var') && isstruct(DATASET),OPTS = DATASET;clear DATASET;;end
-if exist('PARAMETERS','var') && isstruct(PARAMETERS),OPTS = PARAMETERS;;end
-if exist('START','var') && isstruct(START),OPTS = START;clear START;;end
+if exist('DATASET','var') && isstruct(DATASET),OPTS = DATASET;clear DATASET;end
+if exist('PARAMETERS','var') && isstruct(PARAMETERS),OPTS = PARAMETERS;end
+if exist('START','var') && isstruct(START),OPTS = START;clear START;end
 if exist('STOP','var') && isstruct(STOP),OPTS = STOP;clear STOP;end
 
 if exist('OPTS','var')
@@ -106,6 +104,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get latest version of script
 if (DOPTS.update_script)
+    % Based on 
     % http://www.mathworks.com/matlabcentral/fileexchange/55746-javamd5
     md = java.security.MessageDigest.getInstance('MD5');
     fid = fopen('hapi.m','r');
@@ -117,7 +116,7 @@ if (DOPTS.update_script)
     digest = dec2hex(typecast(md.digest(fread(fid, inf, '*uint8')),'uint8'));
     fclose(fid);
     md5b = lower(reshape(digest',1,[]));
-    if (isempty(strmatch(md5a,md5b)))
+    if isempty(strmatch(md5a,md5b))
         %reply = input('Newer version of hapi.m found.  Install? [y]/n:','s');
         %if strcmp(lower(reply),'y')
         fname = sprintf('.hapi.m.%s',datestr(now,29));
@@ -132,7 +131,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Servers
+% Get list of servers
 if (nin == 0)
     if (DOPTS.logging) fprintf('Reading %s ... ',DOPTS.serverlist);end
     str = urlread(DOPTS.serverlist);
@@ -150,9 +149,12 @@ if (nin == 0)
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% TODO: Get this from servers.json
-keys = {'http://datashop.elasticbeanstalk.com/hapi','http://tsds.org/get/SSCWeb/hapi','http://mag.gmu.edu/TestData/hapi'};
-vals = {'DataShop','SSCWeb','TestData'};
+% TODO: Get this from servers.json when it is created.
+keys = {'http://datashop.elasticbeanstalk.com/hapi',...
+        'http://tsds.org/get/SSCWeb/hapi',...
+        'http://mag.gmu.edu/TestData/hapi',...
+        'https://voyager.gsfc.nasa.gov/hapiproto/hapi'};
+vals = {'DataShop','SSCWeb','TestData','CDAWeb'};
 smap = containers.Map(keys,vals);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -176,7 +178,9 @@ if (nin == 1)
         return
     end
     
-    if (DOPTS.logging || nargout == 0),fprintf('\nAvailable datasets from %s:\n',SERVER);end
+    if (DOPTS.logging || nargout == 0)
+        fprintf('\nAvailable datasets from %s:\n',SERVER);
+    end
 
     if isstruct(data.catalog) 
         % Make data.catalog cell array of structs.
@@ -194,7 +198,7 @@ if (nin == 1)
         if (DOPTS.logging || nargout == 0),fprintf('  %s\n',data.catalog{i}.id);end
     end
     if (DOPTS.logging || nargout == 0),fprintf('\n');end
-    return;
+    return
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -239,7 +243,6 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Data
-
 if (nin == 3 || nin == 5)
 
     if iscell(PARAMETERS)
@@ -248,9 +251,10 @@ if (nin == 3 || nin == 5)
     end
     
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi || DOPTS.use_cache)
+        % Create directory name from server URL
         urld = regexprep(SERVER,'https*://(.*)','$1');
         urld = ['hapi-data',filesep(),regexprep(urld,'/','_')];
-        if (nin == 5)
+        if (nin == 5) % Data requested
             fname = sprintf('%s_%s_%s_%s',...
                             DATASET,...
                             regexprep(PARAMETERS,',','-'),...
@@ -275,16 +279,18 @@ if (nin == 3 || nin == 5)
         fnamejson = [urld,filesep(),fnamejson,'.json'];
     end
 
-    if DOPTS.use_cache && nin == 5
+    if (DOPTS.use_cache && nin == 5)
+        % Read cached .mat file and return
         if exist(fnamemat,'file')
             if (DOPTS.logging) fprintf('Reading %s ... ',fnamemat);end
-                load(fnamemat);
+            load(fnamemat);
             if (DOPTS.logging) fprintf('Done.\n');end
-            return;
+            return
         end
     end
 
-    if DOPTS.cache_mlbin || DOPTS.cache_hapi
+    if (DOPTS.cache_mlbin || DOPTS.cache_hapi)
+        % Create directory
         if ~exist('hapi-data','dir')
             mkdir('hapi-data');
         end
@@ -302,20 +308,43 @@ if (nin == 3 || nin == 5)
         return
     end
     
+    % Catch case where server returns metadata for all parameters
+    % instead of just the ones requested and then correct meta.parameters.
+    wanted = strsplit(PARAMETERS,',');
+    k = 1;
+    for i = 1:length(meta.parameters)
+        given{i} = meta.parameters{i}.name;
+        if strcmp(given{i},wanted) || strcmp(given{i},'Time')
+            newlist{k} = meta.parameters{i};
+            k = k+1;
+        end
+    end
+    meta.parameters = newlist;
+    if strcmp(wanted,'Time')
+        if length(newlist) ~= length(wanted)
+            warning('Server returned too many parameters in /info request');
+        end
+    else
+        if 1+length(newlist) ~= length(wanted)
+            warning('Server returned too many parameters in /info request');
+        end
+    end
+    
     if (DOPTS.logging) fprintf('Done.\n');end
-    if (nin == 3)
+    if (nin == 3) % Only metadata wanted.  Return it.
         data = meta
         return
     end
 
     if (DOPTS.cache_hapi)
-        % Ideally meta variable would be serialized meta to JSON, so second
+        % Ideally the meta variable would be serialized to JSON, so second
         % request is not needed, but serialization is not simple to do.
-        % TODO: Look at code for webread() to find out what
-        % undocumented function is used to convert JSON to MATLAB
-        % structure.  Then use urlread() instead of webread() above 
-        % so the following request is not needed.
-        urlwrite(urljson,fnamejson);
+        % TODO: Look at code for webread() to find out what undocumented
+        % function is used to convert JSON to MATLAB structure.  Then use
+        % urlread() instead of webread() above so the following request is
+        % not needed.
+        %urlwrite(urljson,fnamejson);
+        websave(fnamejson,urljson);
         if (DOPTS.logging) fprintf('Wrote %s ...\n',fnamejson);end
     end
 
@@ -331,10 +360,8 @@ if (nin == 3 || nin == 5)
         end
     end
     
-    if ~strcmp(DOPTS.format,'csv') && binaryavailable
+    if (~strcmp(DOPTS.format,'csv') && binaryavailable)
         % Binary read.
-        % TODO: Account for mixed types?  But can't have single array
-        % with integer and doubles.  
         if (DOPTS.logging) fprintf('Downloading %s ... ',urlfbin);end
         % Fastest method based on tests in format_compare.m
         urlwrite(urlfbin,fnamefbin);
@@ -355,16 +382,18 @@ if (nin == 3 || nin == 5)
             rmfile(fnamefbin);
         end
         
+        % Should use _x instead of x_, but _x is not an allowed field name.
+        % Extra info needed later.
         meta.x_.format    = 'csv';
         meta.x_.url       = urlbin;
         meta.x_.cachefile = fnamebin;
-        
     else
         % CSV read.
         if (DOPTS.cache_hapi)
-            if (DOPTS.logging) fprintf('Downloading %s ... ',urlcsv);end
             % Save to file and read file
-            urlwrite(urlcsv,fnamecsv);
+            if (DOPTS.logging) fprintf('Downloading %s ... ',urlcsv);end
+            %urlwrite(urlcsv,fnamecsv);
+            websave(fnamecsv,urlcsv);
             if (DOPTS.logging) fprintf('Done.\n');end
             if (DOPTS.logging) fprintf('Reading %s ... ',fnamecsv);end
             fid = fopen(fnamecsv,'r');
@@ -372,20 +401,22 @@ if (nin == 3 || nin == 5)
             fclose(fid);
             if (DOPTS.logging) fprintf('Done.\n');end
         else
-            if (DOPTS.logging) fprintf('Reading %s ... ',urlcsv);end
             % Read into memory directly.
+            if (DOPTS.logging) fprintf('Reading %s ... ',urlcsv);end
             str = urlread(urlcsv);
             if (DOPTS.logging) fprintf('Done.\n');end
         end
-        Ifc = findstr(str(1:40),','); % First comma
+        Ifc = findstr(str(1:min(40,length(str))),','); % Ifc = index of first comma.  Assumes time stamps + whitespace <= 40 characters.
         t1 = deblank(str(1:Ifc-1));
         timelen = length(t1);
-        % TODO: Handle alternative date/time respresentations that are allowed:
-        % YYYY-DDD, YYYYmmDD, THHMMSS, etc.
+        % TODO: Handle alternative date respresentations that are allowed:
+        % YYYY-DDD, YYYYmmDD, etc. and time representations: THHMMSS, etc.
         % Probably want to use this
         % https://github.com/JodaOrg/joda-time/releases/download/v2.9.9/joda-time-2.9.9.jar
-        twformat = t1;
+        twformat = t1; % Time Write format.
         if ~isempty(regexp(twformat,'^[0-9]{4}-[0-9]{2}-'))
+            % Only handles YYYY-MM-DDTHH:MM:SS.[0-9]{0,9} and truncated
+            % forms.  Need to re-write.
             twformat = regexprep(twformat,'^[0-9]{4}-','%4d-');
             twformat = regexprep(twformat,'%4d-[0-9][0-9]-','%4d-%02d-');
             twformat = regexprep(twformat,'%4d-%02d-[0-9][0-9]','%4d-%02d-%02d');
@@ -393,28 +424,17 @@ if (nin == 3 || nin == 5)
             twformat = regexprep(twformat,'%4d-%02d-%02dT%02d:[0-9][0-9]','%4d-%02d-%02dT%02d:%02d');
             twformat = regexprep(twformat,'%4d-%02d-%02dT%02d:%02d:[0-9][0-9]','%4d-%02d-%02dT%02d:%02d:%02d');
             twformat = regexprep(twformat,'\.[0-9]','.%01d');
-            for i = 1:8 % Assumes no more than ns precision.
+            for i = 1:8 % Assumes no more than nanosecond precision.
                 reg = sprintf('\\.%%0%dd[0-9]',i);
                 rep = sprintf('.%%0%dd',i+1);
                 twformat = regexprep(twformat,reg,rep);
             end
         else
             error('Format of time string not recognized');
-        end        
-        rformat = regexprep(twformat,'%0','%');
-
-        if (0)
-        if strmatch(t1(end),'Z') % Last char is Z
-            % Read format string
-            rformat  = '%4d-%2d-%2dT%2d:%2d:%2d.%3dZ ';
-            % Time write format string
-            twformat = '%4d-%02d-%02dT%02d:%02d:%02d.%03dZ';
-        else
-            rformat  = '%4d-%2d-%2dT%2d:%2d:%2d.%3d ';
-            twformat = '%4d-%02d-%02dT%02d:%02d:%02d.%03d';
-        end
-        end
-
+        end    
+        rformat = regexprep(twformat,'%0','%'); % Read Format.
+        rformat = [rformat,' '];
+        
         % Number of time columns
         ntc     = length(findstr('d',twformat));
         lcol(1) = ntc; % Last time column.
@@ -453,7 +473,7 @@ if (nin == 3 || nin == 5)
             % Check A to make sure it has same number of rows
             % as number of rows in file. See hapi_test for example
             % when this error is caught.  Much faster than using
-            % native MATLAB function.
+            % native MATLAB function.  Remove for production.
             nrows = str2num(r);
             for i = 1:length(A)
                 nread = size(A{i},1);
@@ -463,13 +483,14 @@ if (nin == 3 || nin == 5)
             end
         end
         
-        % Compute time strings (using a rformat with time conversion
+        % Compute time strings (using a trformat with time conversion
         % specifications is much slower - see format_compare.m)
-        DTVec = transpose(cat(2,A{1:ntc})); % Yr,Mo,Dy,Hr,Mn,Sc,Ms, ... matrix.
+        DTVec = transpose(cat(2,A{1:ntc})); % Yr,Mo,Dy,Hr,Mn,Sc,Ms,... matrix.
         
-        % Should we even return this?  Probably won't be used.
+        % Return exact time strings as found in CSV.
+        % Should this even be returned?  Probably won't be used.
         % Doubles the parsing time.
-        Time = sprintf(twformat,DTVec(:)); % datestr is too slow
+        Time = sprintf(twformat,DTVec(:)); % datestr() is more straightforward, but is very slow.
         Time = reshape(Time,timelen,length(Time)/timelen)';
         
         data      = struct();
@@ -477,7 +498,7 @@ if (nin == 3 || nin == 5)
         data      = setfield(data,'DateTimeVector',DTVec');
 
         for i = 1:length(pnames)
-            if any(strcmp(ptypes{i},{'isotime','string'}))%% && isfield(meta.parameters{i+1},'size')
+            if any(strcmp(ptypes{i},{'isotime','string'}))
                 % Array parameter of type isotime or string
                 pdata = A(fcol(i):lcol(i));
             else

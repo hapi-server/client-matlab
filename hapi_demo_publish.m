@@ -1,3 +1,4 @@
+% Use to generate html/hapi_demo.html and ./hapi_demo.md
 clear opts
 opts.figureSnapMethod = 'print';
 opts.maxWidth = 800;
