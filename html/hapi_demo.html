@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>hapi_demo</title><meta name="generator" content="MATLAB 8.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-06-19"><meta name="DC.source" content="hapi_demo.m"><style type="text/css">
+      --><title>hapi_demo</title><meta name="generator" content="MATLAB 8.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-06-20"><meta name="DC.source" content="hapi_demo.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -266,8 +266,8 @@ meta.parameters{:}
 meta.parameters{1}.name = <span class="string">'Time'</span>; <span class="comment">% Fix error in metadata.</span>
 <span class="comment">% Plot</span>
 hapiplot(data,meta)
-</pre><pre class="codeoutput">Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/info?id=AC_H0_MFI&amp;parameters=BGSEc ... Warning: Server returned too many parameters in /info
-request 
+</pre><pre class="codeoutput">Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/info?id=AC_H0_MFI&amp;parameters=BGSEc ... Warning: Server returned too many parameters in
+/info request 
 Done.
 Wrote hapi-data/voyager.gsfc.nasa.gov_hapiproto_hapi/AC_H0_MFI_BGSEc.json ...
 Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/data?id=AC_H0_MFI&amp;time.min=2002-01-01&amp;time.max=2002-01-02&amp;parameters=BGSEc ... Done.
@@ -285,7 +285,7 @@ data =
 meta = 
 
             HAPI: '1.0'
-    creationDate: '2017/06/19 12:44:05'
+    creationDate: '2017/06/20 15:38:28'
       parameters: {[1x1 struct]  [1x1 struct]}
        startDate: '1997-09-02T00:00:12'
         stopDate: '2017-04-11T23:59:53'
@@ -366,7 +366,7 @@ ans =
           units: 'deg F'
 
 hapiplot.m: Wrote ./hapi-figures/0B000800408DD710_Temperature_20170617T21:20:32.052_20170618T212032520.png
-</pre><img vspace="5" hspace="5" src="hapi_demo_06.png" alt=""> <h2>Spectra from CASSINIA S/C<a name="7"></a></h2><p>HAPIPLOT infers that this should be plotted as a spectra because bins metadata were provided. Note that the returned data is for six hours but the plot shows that the data extend over 24 hours.  This appears to be a bug in MATLAB's DATETICK function. Also note that the first parameter is named time_array_0 instead of Time. To allow HAPIPLOT to work, this parameter was renamed before HAPIPLOT was called.  This parameter would have been plotted with log_{10} y-axis, but there were negative values, which are not expected given the units are particles/sec/cm^2/ster/keV.</p><pre class="codeinput">server     = <span class="string">'http://datashop.elasticbeanstalk.com/hapi'</span>;
+</pre><img vspace="5" hspace="5" src="hapi_demo_06.png" alt=""> <h2>Spectra from CASSINIA S/C<a name="7"></a></h2><p>HAPIPLOT infers that this should be plotted as a spectra because bins metadata were provided. Note that the first parameter is named time_array_0 instead of Time. To allow HAPIPLOT to work, this parameter was renamed before HAPIPLOT was called.  This parameter would have been plotted with log_{10} z-axis automatically by HAPIPLOT because the distribution of values is heavy-tailed, but there were negative values, which are not expected given the units are particles/sec/cm^2/ster/keV.</p><pre class="codeinput">server     = <span class="string">'http://datashop.elasticbeanstalk.com/hapi'</span>;
 dataset    = <span class="string">'CASSINI_LEMMS_PHA_CHANNEL_1_SEC'</span>;
 parameters = <span class="string">'A'</span>;
 start      = <span class="string">'2002-01-01'</span>;
@@ -428,8 +428,8 @@ ans =
     description: 'high energy resolution LEMMS spectrum of A channels'
            bins: [1x1 struct]
 
-Warning: Parameter has bin ranges, but hapi_plot will
-not use them. 
+Warning: Parameter has bin ranges, but hapi_plot
+will not use them. 
 hapiplot.m: Wrote ./hapi-figures/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A_20020101_20020102T000600.png
 </pre><img vspace="5" hspace="5" src="hapi_demo_07.png" alt=""> <h2>Test Data: Vector (size = [3] in HAPI notation)<a name="8"></a></h2><p>HAPIPLOT infers that this a parameter that should be displayed as multiple time series because the number of components of the vector is &lt; 10. Note that the metadata does not provide labels for the individual components of the vector, so "Column #" is used in the legend. HAPI metadata should include an option to add column labels.</p><pre class="codeinput">server     = <span class="string">'http://mag.gmu.edu/TestData/hapi'</span>; ;
 dataset    = <span class="string">'dataset1'</span>;
@@ -1093,14 +1093,14 @@ metap =
     sampleStartDate: '1970-01-01'
      sampleStopDate: '1970-01-01T00:00:10'
             cadence: 'PT1M'
-         parameters: {13x1 cell}
+         parameters: {19x1 cell}
 
 </pre><h2>Get parameter metadata for one parameter in a dataset<a name="22"></a></h2><pre class="codeinput">pn = 2; <span class="comment">% Parameter number pn in dataset dn from server sn</span>
 metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{pn}.name)
 <span class="comment">% or</span>
 <span class="comment">% metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{pn}.name)</span>
-</pre><pre class="codeoutput">Warning: Server returned too many parameters in /info
-request 
+</pre><pre class="codeoutput">Warning: Server returned too many parameters in
+/info request 
 
 data = 
 
@@ -1244,12 +1244,11 @@ hapiplot(data,meta)
 
 %% Spectra from CASSINIA S/C
 % HAPIPLOT infers that this should be plotted as a spectra because bins
-% metadata were provided. Note that the returned data is for six hours but
-% the plot shows that the data extend over 24 hours.  This appears to be a
-% bug in MATLAB's DATETICK function. Also note that the first parameter is
-% named time_array_0 instead of Time. To allow HAPIPLOT to work, this
-% parameter was renamed before HAPIPLOT was called.  This parameter would
-% have been plotted with log_{10} y-axis, but there were negative values,
+% metadata were provided. Note that the first parameter is named
+% time_array_0 instead of Time. To allow HAPIPLOT to work, this parameter
+% was renamed before HAPIPLOT was called.  This parameter would have been
+% plotted with log_{10} z-axis automatically by HAPIPLOT because the
+% distribution of values is heavy-tailed, but there were negative values,
 % which are not expected given the units are particles/sec/cm^2/ster/keV.
 server     = 'http://datashop.elasticbeanstalk.com/hapi';
 dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';

@@ -26,13 +26,36 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   Parameters can be a comma-separated string or cell array.
 %
 %   [Data,Meta] = HAPI(Server, Dataset, Parameters, Start, Stop) returns
-%   the data and metadata for for the requested parameters. Start and Stop
-%   are <a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> time
-%   stamps (YYYY-mm-DDTHH:MM:SS.FFF in MATLAB notation). If Parameters =
-%   '', all parameters are returned.  An extra field is added to the
-%   returned Data structure named DateTimeVector, which is a matrix with
-%   columns of Year, Month, Day, Hour, Minute, Second, that can be passed
-%   to DATENUM.
+%   the data and metadata for for the requested parameters. If Parameters =
+%   '', all parameters are returned.
+%
+%   Start and Stop must be time stamps of the form YYYY-mm-DDTHH:MM:SS.SSS
+%   or YYYY-DDDTHH:MM:SS.SSS and truncated timestamps are allowed (e.g., 
+%   YYYY-mm-DD, YYYY-DDD, YYYY-MM-DDT00, etc.
+%
+%   An extra field is added to the returned Data structure named
+%   DateTimeVector, which is a matrix with columns of Year, Month, Day,
+%   Hour, Minute, Second, Millisecond, Microsecond, etc. The number of
+%   columns depends on the precision of the time stamps in the data
+%   returned from the server, e.g., if the timestamps are of the form
+%   2000-01, then DateTimeVector will have only three columns (the day is
+%   assumed to be zero). Data.DateTimeVec can be used to directly compute a
+%   MATLAB DATENUM using, e.g.,
+%
+%      datenum(Data.DateTimeVec(:,1:3)) or
+%      datenum(Data.DateTimeVec(:,1:6)) or 
+%      datenum(Data.DateTimeVec(:,1:6)) + Data.DateTimeVec(:,7)/86400
+%
+%   Data.DateTimeVec will always have either 3 columns or 6+ columns.
+%
+%   depending on the precision of the returned data.  Note that MATLAB's
+%   DATENUM is only accurate to 1 ms resolution, so that
+%
+%    datenum(Data.DateTimeVec(:,1:6)) ...
+%      + Data.DateTimeVec(:,7)/86400 ..
+%      + Data.DateTimeVec(:,8)/86400000
+%
+%   is not meaningful.
 %
 %   Options are set by passing a structure as the last argument
 %   with fields
@@ -406,36 +429,14 @@ if (nin == 3 || nin == 5)
             str = urlread(urlcsv);
             if (DOPTS.logging) fprintf('Done.\n');end
         end
-        Ifc = findstr(str(1:min(40,length(str))),','); % Ifc = index of first comma.  Assumes time stamps + whitespace <= 40 characters.
+
+        % Ifc = index of first comma.
+        % Assumes time stamps + whitespace <= 40 characters.
+        Ifc = findstr(str(1:min(40,length(str))),',');
         t1 = deblank(str(1:Ifc-1));
-        timelen = length(t1);
-        % TODO: Handle alternative date respresentations that are allowed:
-        % YYYY-DDD, YYYYmmDD, etc. and time representations: THHMMSS, etc.
-        % Probably want to use this
-        % https://github.com/JodaOrg/joda-time/releases/download/v2.9.9/joda-time-2.9.9.jar
-        twformat = t1; % Time Write format.
-        if ~isempty(regexp(twformat,'^[0-9]{4}-[0-9]{2}-'))
-            % Only handles YYYY-MM-DDTHH:MM:SS.[0-9]{0,9} and truncated
-            % forms.  Need to re-write.
-            twformat = regexprep(twformat,'^[0-9]{4}-','%4d-');
-            twformat = regexprep(twformat,'%4d-[0-9][0-9]-','%4d-%02d-');
-            twformat = regexprep(twformat,'%4d-%02d-[0-9][0-9]','%4d-%02d-%02d');
-            twformat = regexprep(twformat,'%4d-%02d-%02dT[0-9][0-9]','%4d-%02d-%02dT%02d');
-            twformat = regexprep(twformat,'%4d-%02d-%02dT%02d:[0-9][0-9]','%4d-%02d-%02dT%02d:%02d');
-            twformat = regexprep(twformat,'%4d-%02d-%02dT%02d:%02d:[0-9][0-9]','%4d-%02d-%02dT%02d:%02d:%02d');
-            twformat = regexprep(twformat,'\.[0-9]','.%01d');
-            for i = 1:8 % Assumes no more than nanosecond precision.
-                reg = sprintf('\\.%%0%dd[0-9]',i);
-                rep = sprintf('.%%0%dd',i+1);
-                twformat = regexprep(twformat,reg,rep);
-            end
-        else
-            error('Format of time string not recognized');
-        end    
-        rformat = regexprep(twformat,'%0','%'); % Read Format.
-        rformat = [rformat,' '];
-        
-        % Number of time columns
+
+        [rformat,twformat,timelen,na] = timeformat(t1);
+
         ntc     = length(findstr('d',twformat));
         lcol(1) = ntc; % Last time column.
 
@@ -468,6 +469,8 @@ if (nin == 3 || nin == 5)
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
 
+        % Check for correct number of commas
+        % Probably not needed.
         [s,r] = system(sprintf('wc %s | tr -s [:blank:] | cut -d" " -f2',fnamecsv));
         if (s == 0) % TODO: Only works on OS-X and Linux
             % Check A to make sure it has same number of rows
@@ -492,7 +495,9 @@ if (nin == 3 || nin == 5)
         % Doubles the parsing time.
         Time = sprintf(twformat,DTVec(:)); % datestr() is more straightforward, but is very slow.
         Time = reshape(Time,timelen,length(Time)/timelen)';
-        
+
+        DTVec = normalizeDTVec(DTVec,t1,na);
+
         data      = struct();
         data      = setfield(data,'Time',Time);
         data      = setfield(data,'DateTimeVector',DTVec');
@@ -517,6 +522,7 @@ if (nin == 3 || nin == 5)
     end
 
     % Save extra metadata about request in MATLAB binary file
+    % _x not allowed as field name.
     meta.x_ = struct();
     meta.x_.server     = SERVER;
     meta.x_.dataset    = DATASET;
@@ -531,3 +537,95 @@ if (nin == 3 || nin == 5)
     end
 
 end
+
+function DTVec = normalizeDTVec(DTVec,t1,na)
+
+    DTVec(end,:) = DTVec(end,:)*10^na;
+    DTVec = DTVec';
+
+    if size(DTVec,2) > 1
+        if length(t1) > 4 && ~isempty(regexp(t1,'[0-9]{4}-[0-9]{3}'))
+            % Second column of DTVec is day-of-year
+            % Make second and third column month and day.
+            if size(DTVec,2) > 2
+                DTVec = [DTVec(:,1),doy2md(DTVec(:,1:2)),DTVec(:,3:end)];
+            else
+                DTVec = [DTVec(:,1),doy2md(DTVec(:,1:2))];
+            end
+        end
+    end
+
+    if size(DTVec,2) < 3
+        DTVec = [DTVec,ones(size(DTVec,1),3-size(DTVec,2))];
+    end
+    if size(DTVec,2) > 3 && size(DTVec,2) < 6
+        DTVec = [DTVec,ones(size(DTVec,1),3-size(DTVec,2))];
+    end
+    DTVec = DTVec';
+    
+function md = doy2md(ydoy)
+    ydoy = double(ydoy);
+    I                 = (rem(ydoy(:,1),4) == 0 & rem(ydoy(:,1),100) ~= 0) | rem(ydoy(:,1),400) == 0;
+    II                = [zeros(size(ydoy,1),2) , repmat(I,1,10)]; 
+    day_sum           = [0 31 59 90 120 151 181 212 243 273 304 334];
+    delta             = repmat(ydoy(:,2),1,12)-(repmat(day_sum,size(ydoy,1),1) + II);
+    delta(delta <= 0) = 32; 
+    [D,M]             = min(delta');
+    md                = int32([M',floor(D')]);
+
+function [trformat,twformat,timelen,na] = timeformat(t1)
+% TIMEFORMAT - Compute a read and write format string
+%
+%   TIMEFORMAT(t), where t is a restricted set of HAPI date/time strings.
+%   See https://github.com/hapi-server/data-specification/blob/master/HAPI-data-access-spec.md#representation-of-time
+%   for a definition of the allowed date/time strings.
+%
+%   See also TIMEFORMAT_TEST.
+
+    Z = '';
+    if (strcmp(t1(end),'Z')) % Remove trailing Z.
+        Z = t1(end);
+        t1 = t1(1:end-1);
+    end
+
+    % TODO: Test other possibilities.
+    if length(t1) > 4
+        if isempty(regexp(t1,'[0-9]{4}-[0-9]{2}')) && isempty(regexp(t1,'[0-9]{4}-[0-9]{3}'))
+            error('Unrecognized time format of first string %s',t1);
+        end
+    end
+
+    timelen  = length(t1) + length(Z); % Length of time string.
+    trformat = t1; % Time read format.
+
+    trformat = regexprep(trformat,'^[0-9]{4}','%4d');
+    trformat = regexprep(trformat,'%4d-[0-9][0-9][0-9]','%4d-%3d');
+    trformat = regexprep(trformat,'%4d-[0-9][0-9]','%4d-%2d');
+    trformat = regexprep(trformat,'%4d-%2d-[0-9][0-9]','%4d-%2d-%2d');
+    trformat = regexprep(trformat,'T[0-9][0-9]','T%2d');
+    trformat = regexprep(trformat,'T%2d:[0-9][0-9]','T%2d:%2d');
+    trformat = regexprep(trformat,'T%2d:%2d:[0-9][0-9]','T%2d:%2d:%2d');
+
+    twformat = trformat; % Time write format
+    na = 0; % Number of 0s to be appended 
+    if regexp(t1,'\.[0-9]') % Has one or more digits after decimal
+        nd = length(regexprep(t1,'.*\.([0-9].*)','$1')); % # of decimals
+        if (nd > 0) % Has digits after decimal
+            nb = floor(nd/3);   % # blocks of 3
+            nr = mod(nd,3);     % # remaining after blocked
+            % Replace blocks of three digits with %3
+            if (nr > 0)
+                na = 3-(nd-3*nb);   % # of 0s to append
+                pad = sprintf('%%%dd',nr);
+            else
+                na = 0;
+                pad = '';
+            end
+            trformat = regexprep(trformat,'(.*)\..*',...
+                           ['$1.',repmat('%3d',1,nb),pad]);
+            twformat = trformat;
+        end
+    end
+    twformat = [twformat,Z];
+    trformat = [trformat,Z];
+    twformat = regexprep(twformat,'%([2-9])','%0$1');

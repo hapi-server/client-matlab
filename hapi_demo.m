@@ -119,12 +119,11 @@ hapiplot(data,meta)
 
 %% Spectra from CASSINIA S/C
 % HAPIPLOT infers that this should be plotted as a spectra because bins
-% metadata were provided. Note that the returned data is for six hours but
-% the plot shows that the data extend over 24 hours.  This appears to be a
-% bug in MATLAB's DATETICK function. Also note that the first parameter is
-% named time_array_0 instead of Time. To allow HAPIPLOT to work, this
-% parameter was renamed before HAPIPLOT was called.  This parameter would
-% have been plotted with log_{10} y-axis, but there were negative values,
+% metadata were provided. Note that the first parameter is named
+% time_array_0 instead of Time. To allow HAPIPLOT to work, this parameter
+% was renamed before HAPIPLOT was called.  This parameter would have been
+% plotted with log_{10} z-axis automatically by HAPIPLOT because the
+% distribution of values is heavy-tailed, but there were negative values,
 % which are not expected given the units are particles/sec/cm^2/ster/keV.
 server     = 'http://datashop.elasticbeanstalk.com/hapi';
 dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';

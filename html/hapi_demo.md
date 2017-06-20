@@ -269,8 +269,8 @@ hapiplot(data,meta)
 ```
 
 ``` codeoutput
-Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/info?id=AC_H0_MFI&parameters=BGSEc ... Warning: Server returned too many parameters in /info
-request 
+Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/info?id=AC_H0_MFI&parameters=BGSEc ... Warning: Server returned too many parameters in
+/info request 
 Done.
 Wrote hapi-data/voyager.gsfc.nasa.gov_hapiproto_hapi/AC_H0_MFI_BGSEc.json ...
 Downloading https://voyager.gsfc.nasa.gov/hapiproto/hapi/data?id=AC_H0_MFI&time.min=2002-01-01&time.max=2002-01-02&parameters=BGSEc ... Done.
@@ -288,7 +288,7 @@ data =
 meta = 
 
             HAPI: '1.0'
-    creationDate: '2017/06/19 12:44:05'
+    creationDate: '2017/06/20 15:38:28'
       parameters: {[1x1 struct]  [1x1 struct]}
        startDate: '1997-09-02T00:00:12'
         stopDate: '2017-04-11T23:59:53'
@@ -387,7 +387,7 @@ hapiplot.m: Wrote ./hapi-figures/0B000800408DD710_Temperature_20170617T21:20:32.
 Spectra from CASSINIA S/C<span id="7"></span>
 ---------------------------------------------
 
-HAPIPLOT infers that this should be plotted as a spectra because bins metadata were provided. Note that the returned data is for six hours but the plot shows that the data extend over 24 hours. This appears to be a bug in MATLAB's DATETICK function. Also note that the first parameter is named time\_array\_0 instead of Time. To allow HAPIPLOT to work, this parameter was renamed before HAPIPLOT was called. This parameter would have been plotted with log\_{10} y-axis, but there were negative values, which are not expected given the units are particles/sec/cm^2/ster/keV.
+HAPIPLOT infers that this should be plotted as a spectra because bins metadata were provided. Note that the first parameter is named time\_array\_0 instead of Time. To allow HAPIPLOT to work, this parameter was renamed before HAPIPLOT was called. This parameter would have been plotted with log\_{10} z-axis automatically by HAPIPLOT because the distribution of values is heavy-tailed, but there were negative values, which are not expected given the units are particles/sec/cm^2/ster/keV.
 
 ``` codeinput
 server     = 'http://datashop.elasticbeanstalk.com/hapi';
@@ -455,8 +455,8 @@ ans =
     description: 'high energy resolution LEMMS spectrum of A channels'
            bins: [1x1 struct]
 
-Warning: Parameter has bin ranges, but hapi_plot will
-not use them. 
+Warning: Parameter has bin ranges, but hapi_plot
+will not use them. 
 hapiplot.m: Wrote ./hapi-figures/CASSINI_LEMMS_PHA_CHANNEL_1_SEC_A_20020101_20020102T000600.png
 ```
 
@@ -1273,7 +1273,7 @@ metap =
     sampleStartDate: '1970-01-01'
      sampleStopDate: '1970-01-01T00:00:10'
             cadence: 'PT1M'
-         parameters: {13x1 cell}
+         parameters: {19x1 cell}
 ```
 
 Get parameter metadata for one parameter in a dataset<span id="22"></span>
@@ -1287,8 +1287,8 @@ metapr = hapi(Servers{sn}, metad.catalog{dn}.id, metap.parameters{pn}.name)
 ```
 
 ``` codeoutput
-Warning: Server returned too many parameters in /info
-request 
+Warning: Server returned too many parameters in
+/info request 
 
 data = 
 
