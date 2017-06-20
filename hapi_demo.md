@@ -24,7 +24,9 @@ Contents
 -   [Get metadata for all parameters in a dataset](#21)
 -   [Get parameter metadata for one parameter in a dataset](#22)
 
-Download hapi.m if not found.<span id="1"></span>
+<span id="1">&nbsp;</span>
+
+Download hapi.m if not found.
 -------------------------------------------------
 
 ``` codeinput
@@ -33,8 +35,8 @@ if exist('hapi','file') ~= 2
     urlwrite(u,'hapi.m');
 end
 ```
-
-Scalar ephemeris from SSCWeb<span id="2"></span>
+<span id="2"></span>
+Scalar ephemeris from SSCWeb
 ------------------------------------------------
 
 ``` codeinput
