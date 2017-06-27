@@ -4,6 +4,7 @@ if exist('hapi','file') ~= 2
     u = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
     urlwrite(u,'hapi.m');
 end
+set(0,'DefaultFigureWindowStyle','docked')
 
 %%  Scalar ephemeris from SSCWeb
 %
@@ -127,7 +128,7 @@ hapiplot(data,meta)
 % which are not expected given the units are particles/sec/cm^2/ster/keV.
 server     = 'http://datashop.elasticbeanstalk.com/hapi';
 dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
-parameters = 'A';
+parameters = 'time_array_0,A';
 start      = '2002-01-01';
 stop       = '2002-01-02T00:06:00';
 opts       = struct('logging',1);

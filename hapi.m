@@ -333,23 +333,29 @@ if (nin == 3 || nin == 5)
     
     % Catch case where server returns metadata for all parameters
     % instead of just the ones requested and then correct meta.parameters.
-    wanted = strsplit(PARAMETERS,',');
-    k = 1;
-    for i = 1:length(meta.parameters)
-        given{i} = meta.parameters{i}.name;
-        if strcmp(given{i},wanted) || strcmp(given{i},'Time')
-            newlist{k} = meta.parameters{i};
-            k = k+1;
+    % This also catches a specific error where first parameter is named
+    % time_array_0 instead of Time.  Will remove when server fixed.
+    if length(PARAMETERS) > 0 && ~strcmp(meta.parameters{1}.name,'time_array_0')
+        wanted = strsplit(PARAMETERS,',');
+        k = 1;
+        for i = 1:length(meta.parameters)
+            given{i} = meta.parameters{i}.name;
+            if any(strcmp(given{i},wanted)) || strcmp(given{i},'Time')
+                newlist{k} = meta.parameters{i};
+                k = k+1;
+            end
         end
-    end
-    meta.parameters = newlist;
-    if strcmp(wanted,'Time')
-        if length(newlist) ~= length(wanted)
-            warning('Server returned too many parameters in /info request');
-        end
-    else
-        if 1+length(newlist) ~= length(wanted)
-            warning('Server returned too many parameters in /info request');
+        meta.parameters = newlist;
+        if strcmp(wanted,'Time')
+            if length(newlist) ~= length(wanted)
+                fprintf('\n');
+                warning('Server returned too many parameters in /info request');
+            end
+        else
+            if 1+length(newlist) ~= length(wanted)
+                fprintf('\n');
+                warning('\nServer returned too many parameters in /info request');
+            end
         end
     end
     
@@ -472,7 +478,7 @@ if (nin == 3 || nin == 5)
         % Check for correct number of commas
         % Probably not needed.
         [s,r] = system(sprintf('wc %s | tr -s [:blank:] | cut -d" " -f2',fnamecsv));
-        if (s == 0) % TODO: Only works on OS-X and Linux
+        if (0 & s == 0) % TODO: Only works on OS-X and Linux
             % Check A to make sure it has same number of rows
             % as number of rows in file. See hapi_test for example
             % when this error is caught.  Much faster than using
