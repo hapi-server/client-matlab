@@ -187,7 +187,7 @@ datafbin6(:,1) = datenum('1970-01-01') + datafbin6(:,1)/86400000;
 
 tfbin(6) = toc;
 fprintf('fbin (mmap2):       %0.4fs\t# Fast binary (both doubles)\n',tfbin(6));
-mbin{6} = 'mmap2';
+mfbin{6} = 'mmap2';
 
 figure(1)
 plot(datafbin6(:,1),datafbin6(:,2),'c');
@@ -408,6 +408,38 @@ clear m Data databin5 timebin5  % Un-memmap file
 %fprintf('  (bin extract data:  %0.4fs)\n',tbinx(2));
 %fprintf('  (bin extract time:  %0.4fs)\n',tbinx(3));
 %fprintf('  (bin datenum:       %0.4fs)\n',tbinx(4));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HAPI binary
+tic
+fid = fopen(filebin,'rb');
+databin6 = fread(fid,'uint8=>uint8');
+fclose(fid);
+databin6 = reshape(databin6,24+8,length(databin6)/(24+8))';
+
+It = [1:4,6:7,9:10,12:13,15:16,18:19,21:23];
+timebin6 = double(databin6(:,It) - '0');
+timebin6(:,1) = [1000*timebin6(:,1) + 100*timebin6(:,2) + 10*timebin6(:,3) + timebin6(:,4)];
+timebin6(:,2) = [10*timebin6(:,5) + timebin6(:,6)];
+timebin6(:,3) = 10*timebin6(:,7) + timebin6(:,8);
+timebin6(:,4) = 10*timebin6(:,9) + timebin6(:,10);
+timebin6(:,5) = 10*timebin6(:,11) + timebin6(:,12);
+timebin6(:,6) = 10*timebin6(:,13) + timebin6(:,14);
+timebin6(:,7) = 100*timebin6(:,15) + 10*timebin6(:,16) + timebin6(:,17);
+timebin6 = datenum(timebin6(:,1:6)) + timebin6(:,7)/86400000;
+
+databin6 = databin6(:,25:end)';
+databin6 = typecast(databin6(:)','double');
+
+tbin(6) = toc;
+fprintf('bin (fread):        %0.4fs\t# HAPI binary\n',tbin(6));
+mbin{6} = 'fread';
+
+figure(1)
+plot(timebin6,databin6,'y');
+drawnow;datetick;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
