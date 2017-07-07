@@ -31,7 +31,7 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %
 %   Start and Stop must be time stamps of the form YYYY-mm-DDTHH:MM:SS.SSS
 %   or YYYY-DDDTHH:MM:SS.SSS and truncated timestamps are allowed (e.g., 
-%   YYYY-mm-DD, YYYY-DDD, YYYY-MM-DDT00, etc.
+%   YYYY-mm-DD, YYYY-DDD, YYYY-mm-DDTHH, etc.
 %
 %   An extra field is added to the returned Data structure named
 %   DateTimeVector, which is a matrix with columns of at least Year, Month,
@@ -339,26 +339,28 @@ if (nin == 3 || nin == 5)
     
     % Catch case where server returns metadata for all parameters
     % instead of just the ones requested and then correct meta.parameters.
+    % Remove when that server is fixed (voyager.gsfc.nasa.gov/hapiproto).
+    timename = meta.parameters{1}.name;
     if length(PARAMETERS) > 0 % PARAMETERS='' not given
         wanted = strsplit(PARAMETERS,',');
         k = 1;
         for i = 1:length(meta.parameters)
             given{i} = meta.parameters{i}.name;
-            if any(strcmp(given{i},wanted)) || strcmp(given{i},'Time')
+            if any(strcmp(given{i},wanted)) || strcmp(given{i},timename)
                 newlist{k} = meta.parameters{i};
                 k = k+1;
             end
         end
         meta.parameters = newlist;
-        if strcmp(wanted,'Time')
+        if strcmp(wanted,timename)
             if length(newlist) ~= length(wanted)
                 fprintf('\n');
                 warning('Server returned too many parameters in /info request');
             end
         else
-            if 1+length(newlist) ~= length(wanted)
+            if length(newlist) ~= length(wanted)+1
                 fprintf('\n');
-                warning('\nServer returned too many parameters in /info request');
+                warning('Server returned too many parameters in /info request');
             end
         end
     end
