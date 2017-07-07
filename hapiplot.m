@@ -137,7 +137,7 @@ if ~strcmp(yfill,'null')
 end
 
 % Plot title
-tstr = sprintf('%s/id=%s&parameters=%s',meta.x_.server,meta.x_.dataset,pname);
+tstr = sprintf('%s/info?id=%s&parameters=%s',meta.x_.server,meta.x_.dataset,pname);
 
 % Open figure and give title to figure window.
 fhs = findobj('Type', 'figure');
