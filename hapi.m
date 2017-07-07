@@ -352,11 +352,13 @@ if (nin == 3 || nin == 5)
         meta.parameters = newlist;
         if strcmp(wanted,'Time')
             if length(newlist) ~= length(wanted)
+                fprintf('\n');
                 warning('Server returned too many parameters in /info request');
             end
         else
-            if length(newlist)-1 ~= length(wanted)
-                warning('Server returned too many parameters in /info request');
+            if 1+length(newlist) ~= length(wanted)
+                fprintf('\n');
+                warning('\nServer returned too many parameters in /info request');
             end
         end
     end
@@ -483,7 +485,7 @@ if (nin == 3 || nin == 5)
         % Check for correct number of commas. Remove in production.
         % TODO: Use ReturnOnError option of TEXTSCAN.
         [s,r] = system(sprintf('wc %s | tr -s [:blank:] | cut -d" " -f2',fnamecsv));
-        if (s == 0) % TODO: s = 0 only on OS-X and Linux
+        if (0 & s == 0) % TODO: Only works on OS-X and Linux
             % Check A to make sure it has same number of rows
             % as number of rows in file. See hapi_test for example
             % when this error is caught.  Much faster than using
