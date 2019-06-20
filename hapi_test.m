@@ -6,17 +6,24 @@ if stat ~= 1 % Not runing test server locally.  Use public version.
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-server     = 'https://voyager.gsfc.nasa.gov/hapiproto/hapi';
-dataset    = 'AC_H0_MFI';
-parameters = 'BGSEc';
+%% Spectra from CASSINIA S/C
+% HAPIPLOT infers that this should be plotted as a spectra because bins
+% metadata were provided. Note that the first parameter is named
+% time_array_0 instead of Time. To allow HAPIPLOT to work, this parameter
+% was renamed before HAPIPLOT was called.  This parameter would have been
+% plotted with log_{10} z-axis automatically by HAPIPLOT because the
+% distribution of values is heavy-tailed, but there were negative values,
+% which are not expected given the units are particles/sec/cm^2/ster/keV.
+server     = 'http://datashop.elasticbeanstalk.com/hapi';
+dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
+parameters = 'A';
 start      = '2002-01-01';
-stop       = '2002-01-02';
-opts       = struct('logging',1,'use_cache',0);
+stop       = '2002-01-02T00:06:00';
+opts       = struct('logging',1);
 
 % Get data and metadata
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);
 
-meta.parameters{2}.fill = '-1e31';
 % Display information
 data
 meta
