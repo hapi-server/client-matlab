@@ -19,7 +19,7 @@ dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
 parameters = 'A';
 start      = '2002-01-01';
 stop       = '2002-01-02T00:06:00';
-opts       = struct('logging',1);
+opts       = struct('logging',1,'use_cache',0);
 
 % Get data and metadata
 [data,meta] = hapi(server,dataset,parameters,start,stop,opts);

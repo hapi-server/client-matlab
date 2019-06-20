@@ -1,9 +1,15 @@
-%% Download hapi.m if not found.
-% 
+%% Set-up
+% Download hapi.m if not found.
 if exist('hapi','file') ~= 2
-    u = 'https://raw.githubusercontent.com/hapi-server/matlab-client/master/hapi.m';
+    u = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m';
     urlwrite(u,'hapi.m');
 end
+% Download hapi_plot.m if not found.
+if exist('hapi','file') ~= 2
+    u = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi_plot.m';
+    urlwrite(u,'hapi_plot.m');
+end
+% Many figures generated, so dock all of them
 set(0,'DefaultFigureWindowStyle','docked')
 
 %%  Scalar ephemeris from SSCWeb
@@ -26,7 +32,7 @@ meta.parameters{:}
 
 % Plot
 hapiplot(data,meta)
-
+break
 %% Two scalars from SSCWeb
 % 
 server     = 'http://tsds.org/get/SSCWeb/hapi';
@@ -104,7 +110,7 @@ dataset    = '0B000800408DD710';
 parameters = '';
 start      = '2017-06-17T21:20:32.052';
 stop       = '2017-06-18T21:20:32.520';
-opts       = struct('logging',1,'use_cache',1);
+opts       = struct('logging',1);
 
 [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
 
@@ -118,6 +124,7 @@ hapiplot(data,meta)
 % or
 % hapiplot(data,meta,'0B000800408DD710')
 
+try
 %% Spectra from CASSINIA S/C
 % HAPIPLOT infers that this should be plotted as a spectra because bins
 % metadata were provided. Note that the first parameter is named
@@ -126,6 +133,8 @@ hapiplot(data,meta)
 % plotted with log_{10} z-axis automatically by HAPIPLOT because the
 % distribution of values is heavy-tailed, but there were negative values,
 % which are not expected given the units are particles/sec/cm^2/ster/keV.
+% Sometimes times out; could increase default timeout 5s using option
+% options.Timeout of webread().
 server     = 'http://datashop.elasticbeanstalk.com/hapi';
 dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
 parameters = 'time_array_0,A';
@@ -144,6 +153,8 @@ meta.parameters{:}
 meta.parameters{1}.name = 'Time'; % Fix error in metadata.
 % Plot
 hapiplot(data,meta)
+catch err
+end
 
 %% Test Data: Vector (size = [3] in HAPI notation)
 % HAPIPLOT infers that this a parameter that should be displayed as
@@ -421,7 +432,7 @@ metad = hapi(Servers{sn})
 
 %% Get metadata for all parameters in a dataset 
 %
-dn = 1; % Dataset number from server number sn
+dn = 2; % Dataset number from server number sn
 metap = hapi(Servers{sn}, metad.catalog{dn}.id)
 % or
 % metap = hapi(Servers{sn},ids{dn},opts);
