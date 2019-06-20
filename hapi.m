@@ -95,7 +95,7 @@ DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) 
 DOPTS.use_cache     = 0; % Use cached MATLAB binary file associated with request if found.
 DOPTS.format        = 'csv'; % If 'csv', request for HAPI CSV will be made even if server supports HAPI Binary. (For debugging.) 
 
-DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/data-specification/master/servers.txt';
+DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/servers/master/all.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m';
 
 % Needs thought:
@@ -176,25 +176,9 @@ if (nin == 0)
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Map server URL to TSDS ID so link can be given for a web page
-% with a dataset and parameter GUI.
-% TODO: Get this from servers.json when it is created.
-keys = {'http://datashop.elasticbeanstalk.com/hapi',...
-        'http://tsds.org/get/SSCWeb/hapi',...
-        'http://mag.gmu.edu/TestData/hapi',...
-        'https://voyager.gsfc.nasa.gov/hapiproto/hapi'};
-vals = {'DataShop','SSCWeb','TestData','CDAWeb'};
-smap = containers.Map(keys,vals);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Datasets
 if (nin == 1)
-
-    if isKey(smap,SERVER)
-        catalog = smap(SERVER);
-        turl = sprintf('http://tsds.org/get/#catalog=%s',catalog);
-        fprintf('See the interface at <a href="%s">%s</a>\nto search and explore datasets from the <a href="%s">%s</a> HAPI Server.\n',turl,turl,SERVER,catalog);
-    end
 
     url = [SERVER,'/catalog/'];
     if (DOPTS.logging),fprintf('Reading %s ... ',url);end
@@ -234,12 +218,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parameters
 if (nin == 2)
-
-    if isKey(smap,SERVER)
-        catalog = smap(SERVER);
-        turl = sprintf('http://tsds.org/get/#catalog=%s&dataset=%s',catalog,DATASET);
-        fprintf('See the interface at <a href="%s">%s</a>\nto search and explore parameters in this dataset from the <a href="%s">%s</a> HAPI Server.\n',turl,turl,SERVER,catalog);
-    end
 
     url = [SERVER,'/info?id=',DATASET];
 
