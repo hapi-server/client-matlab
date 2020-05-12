@@ -260,10 +260,10 @@ if (nin == 3 || nin == 5)
     if (DOPTS.cache_mlbin || DOPTS.cache_hapi || DOPTS.use_cache)
         % Create directory name from server URL
         urld = regexprep(SERVER,'https*://(.*)','$1');
-        urld = ['hapi-data',filesep(),regexprep(urld,'/','_')];
+        urld = ['hapi-data',filesep(),regexprep(urld,'/|:','_')];
         if (nin == 5) % Data requested
             fname = sprintf('%s_%s_%s_%s',...
-                            DATASET,...
+                            regexprep(DATASET,'/|:','_'),...
                             regexprep(PARAMETERS,',','-'),...
                             regexprep(START,'-|:\.|Z',''),...
                             regexprep(STOP,'-|:|\.|Z',''));
@@ -282,7 +282,7 @@ if (nin == 3 || nin == 5)
         if (length(PARAMETERS) > 0) % Not all parameters wanted
             urljson = [urljson,'&parameters=',PARAMETERS];
         end
-        fnamejson = sprintf('%s_%s',DATASET,regexprep(PARAMETERS,',','-'));
+        fnamejson = sprintf('%s_%s',regexprep(DATASET,'/|:','_'),regexprep(PARAMETERS,',','-'));
         fnamejson = [urld,filesep(),fnamejson,'.json'];
     end
 
@@ -455,6 +455,8 @@ if (nin == 3 || nin == 5)
         end
         if (DOPTS.logging) fprintf('Parsing %s ... ',fnamecsv);end
         fid = fopen(fnamecsv,'r');
+        fnamecsv
+        rformat
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
 
