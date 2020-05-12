@@ -6,7 +6,7 @@ In MATLAB, simply execute
 
 ```matlab
 % D/L and save hapi.m
-urlwrite('https://github.com/hapi-server/client-matlab/hapi.m','hapi.m');
+urlwrite('https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m','hapi.m');
 help hapi
 ```
 
@@ -22,9 +22,9 @@ To run examples, execute
 
 ```matlab
 % Download hapi.m
-urlwrite('https://github.com/hapi-server/client-matlab/hapi.m','hapi.m'); 
+urlwrite('https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m','hapi.m');
 % Download hapi_demo.m
-urlwrite('https://github.com/hapi-server/client-matlab/hapi_demo.m','hapi_demo.m');
+urlwrite('https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi_demo.m','hapi_demo.m');
 hapi_demo % Execute hapi_demo script
 ```
 
