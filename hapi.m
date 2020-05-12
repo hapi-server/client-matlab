@@ -455,8 +455,6 @@ if (nin == 3 || nin == 5)
         end
         if (DOPTS.logging) fprintf('Parsing %s ... ',fnamecsv);end
         fid = fopen(fnamecsv,'r');
-        fnamecsv
-        rformat
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
 
