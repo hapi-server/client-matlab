@@ -5,7 +5,7 @@
 In MATLAB, simply execute
 
 ```matlab
-% D/L and save hapi.m
+% D/L and save hapi.
 urlwrite('https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m','hapi.m');
 help hapi
 ```
@@ -14,9 +14,9 @@ Or, download [the package](https://github.com/hapi-server/client-matlab/archive/
 
 ## Examples
 
-Example usage is given in [hapi_demo.m](https://github.com/hapi-server/client-matlab/hapi_demo.m).
+Example usage is given in [hapi_demo.m](https://github.com/hapi-server/client-matlab/blob/master/hapi_demo.m).
 
-The console and figure output of this script is viewable at [hapi_demo.md](https://github.com/hapi-server/client-matlab/hapi_demo.md).
+The console and figure output of this script is viewable at [hapi_demo.md](https://github.com/hapi-server/client-matlab/blob/master/hapi_demo.md).
 
 To run examples, execute
 
