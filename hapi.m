@@ -449,7 +449,7 @@ if (nin == 3 || nin == 5)
                 rformat = [rformat,repmat('%f ',1,prod(psizes{i-1}))];
             end
             if any(strcmp(ptypes{i-1},{'isotime','string'}))
-                plengths{i-1}  = meta.parameters{i}.length - 1;
+                plengths{i-1}  = meta.parameters{i}.length;
                 rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c '],1,prod(psizes{i-1}))];
             end
         end
@@ -457,7 +457,7 @@ if (nin == 3 || nin == 5)
         fid = fopen(fnamecsv,'r');
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
-
+        
         if isempty(A{end}) % Catches case when rformat is wrong.
             error(sprintf('\nError in CSV read of %f\n',fnamecsv));
         end
@@ -478,7 +478,6 @@ if (nin == 3 || nin == 5)
                 end
             end
         end
-        
         DTVec = transpose(cat(2,A{1:ntc})); 
         % DTVec is matrix with columns of Yr,Mo,Dy,Hr,Mn,Sc,Ms,...
         % or Yr,Doy,Hr,Mn,Sc,Ms,....
