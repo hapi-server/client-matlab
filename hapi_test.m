@@ -1,11 +1,26 @@
-%% Use local TestData server if it is running.
-url = 'http://localhost:8999/hapi';
-[str,stat]  = urlread(url);
-if stat ~= 1 % Not runing test server locally.  Use public version.
-    url = 'http://mag.gmu.edu/TestData/hapi';
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Test Data: All parameters
+% If parameters='', HAPI() get all parameters in the dataset and HAPIPLOT
+% creates (one or more, as needed) plots for each individually. This demo
+% works, but is suppressed.
+if (1)
+    server     = 'http://hapi-server.org/servers/TestData2.0/hapi';
+    dataset    = 'dataset1';
+    parameters = '';
+    start      = '1970-01-01';
+    stop       = '1970-01-01T00:01:00';
+    opts       = struct('logging',1);
 
+    [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
+
+    data
+    meta
+    fprintf('meta.parameters = ');
+    meta.parameters{:}
+
+    hapiplot(data,meta)
+end
+
+if 0
 %% Spectra from CASSINIA S/C
 % HAPIPLOT infers that this should be plotted as a spectra because bins
 % metadata were provided. Note that the first parameter is named
@@ -32,20 +47,4 @@ meta.parameters{:}
 meta.parameters{1}.name = 'Time'; % Fix error in metadata.
 % Plot
 hapiplot(data,meta)
-
-break
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Should be an error.  Output file has columns that are
-% inconsistent with what is expected from /info request for 
-% parameter list.
-server     = url;
-dataset    = 'dataset1'; % Dataset with intentional problems for testing.
-parameters = 'spectranobins';
-start      = '1970-01-01';
-stop       = '1970-01-01T00:01:00';
-opts       = struct('format',format,'logging',1,'use_cache',0);
-
-[data,meta] = hapi(server, dataset, parameters, start, stop, opts);
-hapiplot(data,meta)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end
