@@ -14,7 +14,7 @@ set(0,'DefaultFigureWindowStyle','docked')
 
 %%  Scalar ephemeris from SSCWeb
 %
-server     = 'http://tsds.org/get/SSCWeb/hapi';
+server     = 'http://hapi-server.org/servers/SSCWeb/hapi';
 dataset    = 'ace';
 parameters = 'X_TOD';
 start      = '2012-02-01';
@@ -35,7 +35,7 @@ hapiplot(data,meta)
 
 %% Two scalars from SSCWeb
 % 
-server     = 'http://tsds.org/get/SSCWeb/hapi';
+server     = 'http://hapi-server.org/servers/SSCWeb/hapi';
 dataset    = 'ace';
 parameters = 'X_TOD,Y_TOD';
 start      = '2012-02-01';
@@ -57,7 +57,7 @@ hapiplot(data,meta)
 %% Scalar string from SSCWeb
 %
 
-server     = 'http://tsds.org/get/SSCWeb/hapi';
+server     = 'http://hapi-server.org/servers/SSCWeb/hapi';
 dataset    = 'ace';
 parameters = 'LT_GEO';
 start      = '2012-02-01';
@@ -81,7 +81,7 @@ hapiplot(data,meta)
 % returns all parameters, not just BGSEc. Also note the metadata has
 % the wrong fill value of "-9.999999848243207E30".  It should be "-1e31"
 % and a correction was applied below.
-server     = 'https://voyager.gsfc.nasa.gov/hapiproto/hapi';
+server     = 'https://cdaweb.gsfc.nasa.gov/hapi';
 dataset    = 'AC_H0_MFI';
 parameters = 'BGSEc';
 start      = '2002-01-01';
@@ -124,45 +124,13 @@ hapiplot(data,meta)
 % or
 % hapiplot(data,meta,'0B000800408DD710')
 
-try
-%% Spectra from CASSINIA S/C
-% HAPIPLOT infers that this should be plotted as a spectra because bins
-% metadata were provided. Note that the first parameter is named
-% time_array_0 instead of Time. To allow HAPIPLOT to work, this parameter
-% was renamed before HAPIPLOT was called.  This parameter would have been
-% plotted with log_{10} z-axis automatically by HAPIPLOT because the
-% distribution of values is heavy-tailed, but there were negative values,
-% which are not expected given the units are particles/sec/cm^2/ster/keV.
-% Sometimes times out; could increase default timeout 5s using option
-% options.Timeout of webread().
-server     = 'http://datashop.elasticbeanstalk.com/hapi';
-dataset    = 'CASSINI_LEMMS_PHA_CHANNEL_1_SEC';
-parameters = 'time_array_0,A';
-start      = '2002-01-01';
-stop       = '2002-01-02T00:06:00';
-opts       = struct('logging',1);
-
-% Get data and metadata
-[data,meta] = hapi(server,dataset,parameters,start,stop,opts);
-
-% Display information
-data
-meta
-fprintf('meta.parameters = ');
-meta.parameters{:}
-meta.parameters{1}.name = 'Time'; % Fix error in metadata.
-% Plot
-hapiplot(data,meta)
-catch err
-end
-
 %% Test Data: Vector (size = [3] in HAPI notation)
 % HAPIPLOT infers that this a parameter that should be displayed as
 % multiple time series because the number of components of the vector
 % is < 10. Note that the metadata does not provide labels for the
 % individual components of the vector, so "Column #" is used in the
 % legend. HAPI metadata should include an option to add column labels.
-server     = 'http://mag.gmu.edu/TestData/hapi'; ;
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'vector';
 start      = '1970-01-01';
@@ -187,7 +155,7 @@ hapiplot(data,meta)
 % a spectra because the number of vector elements is > 9. Note that the 
 % metadata does not provide labels for the individual components of the
 % vector, so "Column" is used as the y-axis label.
-server     = 'http://mag.gmu.edu/TestData/hapi'; ;
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'vector';
 start      = '1970-01-01';
@@ -215,7 +183,7 @@ hapiplot(data,meta)
 % transformation matrices  (using Javascript array notation)
 % [Txx, Txy, Txz, Tyx, Tyy, Tyz, Tzx, Tzy, Tzz]. HAPI metadata should 
 % include the ability to provide these labels.
-server     = 'http://mag.gmu.edu/TestData/hapi';
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi';
 dataset    = 'dataset1';
 parameters = 'transform';
 start      = '1970-01-01';
@@ -243,7 +211,7 @@ hapiplot(data,meta)
 % rotation matrices with labels (using HAPI array notation)
 % [['Txx','Txy','Txz'],['Tyx','Tyy','Tyz'],['Tzx','Tzy','Tzz']]. HAPI
 % should include the ability to provide these labels.
-server     = 'http://mag.gmu.edu/TestData/hapi'; ;
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'transformmulti';
 start      = '1970-01-01';
@@ -265,7 +233,7 @@ hapiplot(data,meta)
 
 %% Test Data: Scalar string parameter
 % Demonstrating how HAPIPLOT handles this type of parameter.
-server     = 'http://mag.gmu.edu/TestData/hapi'; ;
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'scalarstr';
 start      = '1970-01-01';
@@ -287,7 +255,7 @@ hapiplot(data,meta)
 %% Test Data: Scalar isotime parameter
 % HAPIPLOT converts the isotime string to a MATLAB DATENUM to create
 % y-axis labels.
-server     = 'http://mag.gmu.edu/TestData/hapi'; ;
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'scalariso';
 start      = '1970-01-01';
@@ -310,7 +278,7 @@ hapiplot(data,meta)
 % A time series of integers intended to communicate a status represented by
 % a string.  The metadata includes a (non-HAPI standard) map from an
 % integer to a string, and this map is used to generate y-axis labels.
-server     = 'http://mag.gmu.edu/TestData/hapi'; ;
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'scalarcats';
 start      = '1970-01-01';
@@ -333,7 +301,7 @@ hapiplot(data,meta)
 % HAPIPLOT creates two time series plots in this case and labels the first
 % using MATLAB notation as vectormulti(:,:,1) and second as
 % vectormulti(:,:,2).
-server     = 'http://mag.gmu.edu/TestData/hapi'; ;
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi'; ;
 dataset    = 'dataset1';
 parameters = 'vectormulti';
 start      = '1970-01-01';
@@ -356,7 +324,7 @@ hapiplot(data,meta)
 % In this unusual dataset, 3-vector (size = [3] in HAPI notation) of
 % strings is given. HAPIPLOT creates three time series plots, one for each
 % vector component.
-server     = 'http://mag.gmu.edu/TestData/hapi';
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi';
 dataset    = 'dataset1';
 parameters = 'vectorstr';
 start      = '1970-01-01';
@@ -378,7 +346,7 @@ hapiplot(data,meta)
 %% Test Data: 100-element time series with no bins
 % HAPIPLOT assumes that this is best plotted as a spectra because
 % the number of elements is greater than 9.
-server     = 'http://mag.gmu.edu/TestData/hapi';
+server     = 'http://hapi-server.org/servers/TestData2.0/hapi';
 dataset    = 'dataset1';
 parameters = 'spectranobins';
 start      = '1970-01-01';
@@ -401,8 +369,8 @@ hapiplot(data,meta)
 % If parameters='', HAPI() get all parameters in the dataset and HAPIPLOT
 % creates (one or more, as needed) plots for each individually. This demo
 % works, but is suppressed.
-    if (0)
-    server     = 'http://mag.gmu.edu/TestData/hapi';
+if (0)
+    server     = 'http://hapi-server.org/servers/TestData2.0/hapi';
     dataset    = 'dataset1';
     parameters = '';
     start      = '1970-01-01';
