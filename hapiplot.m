@@ -50,12 +50,12 @@ if ~exist('pn','var')
                     warning(sprintf('\nParameter %s has more than 3 dimensions.  Plotting only first 3.',name));
                 end
                 % Parameter is stored as N-D matrix with rows of time.
-                % Loop over 3rd dimension.
-                for j = 1:psize(2)
+                % Loop over 2nd dimension.
+                for j = 1:psize(1)
                     tmp   = getfield(data,pname);
-                    datar = setfield(data,pname,tmp(:,:,j)); % Extracts tmp(:,:,j,1,1,...)
+                    datar = setfield(data,pname,squeeze(tmp(:,j,:))); 
                     metar = setfield(meta,'size',psize(1));
-                    metar.parameters{i+1}.label = sprintf('%s(:,:,%d)',pname,j);
+                    metar.parameters{i+1}.label = sprintf('%s(:,%d,:)',pname,j);
                     hapiplot(datar,metar,i);
                 end
             end
@@ -276,20 +276,21 @@ else
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Determine if y scale should be log (not well tested).
-    one_zero_or_negative = false;
-    if sum(bincenters <= 0) == 1
-        one_zero_or_negative = true;
+    first_zero_or_negative = false;
+    if sum(bincenters <= 0) == 1 && bincenters(1) <= 0
+        first_zero_or_negative = true;
     end
     z = (bincenters-mean(bincenters))/std(bincenters);
     loglike = false;
     spectralike = false;
     if length(abs(z) > 3) > 5/length(bincenters)
         loglike = true;
-        if (one_zero_or_negative) && bincenters(1) <= 0
+        if first_zero_or_negative
             spectralike = true;
             bincenters = bincenters(2:end);
             y = y(:,2:end);
-            warning(sprintf('Data looks like a spectra that is best plotted on log scale. Not plotting first %s.\n',binname));            
+            warning(sprintf('Data looks like a spectra that is best plotted on log scale.'));
+            warning(sprintf('Not plotting first %s b/c <=0.\n',binname));
         end
         bincenters2 = bincenters(2);
     end
