@@ -98,9 +98,6 @@ DOPTS.format        = 'csv'; % If 'csv', request for HAPI CSV will be made even 
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/servers/master/all.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m';
 
-% Needs thought:
-DOPTS.update_script = 0;
-
 % Not implemented:
 %DOPTS.hapi_data     = './hapi-data'; % Where to store cached data.
 %DOPTS.split_long    = 0; % Split long requests into chunks and fetch chunks.
@@ -123,36 +120,6 @@ if exist('OPTS','var')
         for i = 1:length(keys)
             DOPTS = setfield(DOPTS,keys{i},getfield(OPTS,keys{i}));
         end
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Get latest version of script
-% TODO: Consider nagging once per day with message for how to turn off.
-if (DOPTS.update_script)
-    % MD5 method based on 
-    % http://www.mathworks.com/matlabcentral/fileexchange/55746-javamd5
-    md = java.security.MessageDigest.getInstance('MD5');
-    fid = fopen('hapi.m','r');
-    digest = dec2hex(typecast(md.digest(fread(fid, inf, '*uint8')),'uint8'));
-    fclose(fid);
-    md5a = lower(reshape(digest',1,[]));
-    urlwrite(DOPTS.scripturl,'.hapi.m');
-    fid = fopen('.hapi.m','r');
-    digest = dec2hex(typecast(md.digest(fread(fid, inf, '*uint8')),'uint8'));
-    fclose(fid);
-    md5b = lower(reshape(digest',1,[]));
-    if isempty(strmatch(md5a,md5b))
-        %reply = input('Newer version of hapi.m found.  Install? [y]/n:','s');
-        %if strcmp(lower(reply),'y')
-        fname = sprintf('.hapi.m.%s',datestr(now,29));
-        movefile('hapi.m',fname);
-        movefile('.hapi.m','hapi.m');
-        fprintf('Updated hapi.m. Old version saved as %s. Use options to disable updates.\n',fname);
-        %else
-        %    fprintf('Not updating hapi.m. Update attempts can be disabled with options.\n');
-        %end
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
