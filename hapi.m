@@ -180,7 +180,7 @@ end
 % Datasets
 if (nin == 1)
 
-    url = [SERVER,'/catalog/'];
+    url = [SERVER,'/catalog'];
     if (DOPTS.logging),fprintf('Reading %s ... ',url);end
 
     opts = weboptions('ContentType', 'json');
