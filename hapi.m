@@ -5,7 +5,7 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   data server. See <a href="./html/hapi_demo.html">hapi_demo</a> for usage examples.
 %
 %   This is a command-line only interface.  For a GUI for browsing and
-%   searching servers, datasets, and parameters, see http://tsds.org/get/.
+%   searching servers, datasets, and parameters, see http://hapi-server.org/servers/.
 %   Select a catalog, dataset, parameter, and time range and then request a
 %   MATLAB script as an output.  A script including a call to this script
 %   will be generated that can be pasted onto the command line.
@@ -450,14 +450,13 @@ if (nin == 3 || nin == 5)
             end
             if any(strcmp(ptypes{i-1},{'isotime','string'}))
                 plengths{i-1}  = meta.parameters{i}.length;
-                rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c '],1,prod(psizes{i-1}))];
+                rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c'],1,prod(psizes{i-1}))];
             end
         end
         if (DOPTS.logging) fprintf('Parsing %s ... ',fnamecsv);end
         fid = fopen(fnamecsv,'r');
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
-        
         if isempty(A{end}) % Catches case when rformat is wrong.
             error(sprintf('\nError in CSV read of %f\n',fnamecsv));
         end
@@ -465,7 +464,7 @@ if (nin == 3 || nin == 5)
         % Check for correct number of commas. Remove in production.
         % TODO: Use ReturnOnError option of TEXTSCAN.
         [s,r] = system(sprintf('wc %s | tr -s [:blank:] | cut -d" " -f2',fnamecsv));
-        if (0 & s == 0) % TODO: Only works on OS-X and Linux
+        if (0 && s == 0) % TODO: Only works on OS-X and Linux
             % Check A to make sure it has same number of rows
             % as number of rows in file. See hapi_test for example
             % when this error is caught.  Much faster than using
@@ -478,6 +477,7 @@ if (nin == 3 || nin == 5)
                 end
             end
         end
+
         DTVec = transpose(cat(2,A{1:ntc})); 
         % DTVec is matrix with columns of Yr,Mo,Dy,Hr,Mn,Sc,Ms,...
         % or Yr,Doy,Hr,Mn,Sc,Ms,....
@@ -497,7 +497,6 @@ if (nin == 3 || nin == 5)
         DTVec = normalizeDTVec(DTVec,t1,na);
 
         data = struct('Time',Time,'DateTimeVector',DTVec');
-
         for i = 1:length(pnames)
             if any(strcmp(ptypes{i},{'isotime','string'}))
                 % Array parameter of type isotime or string
@@ -506,7 +505,14 @@ if (nin == 3 || nin == 5)
                 pdata = cat(2,A{fcol(i):lcol(i)});
             end
             pdata = reshape(pdata,[size(pdata,1),psizes{i}(:)']);
-            data  = setfield(data,pnames{i},pdata);
+            if ~isvarname(pnames{i})
+                newname = sprintf('x_parameter%d',i);
+                warning(sprintf('Parameter name ''%s'' is not a valid field name. Using ''%s'' and setting meta.parameters{%d}.name_matlab = %s',pnames{i},newname,i,pnames{i}));
+                data  = setfield(data,newname,pdata);
+                meta.parameters{i+1}.name_matlab = newname;
+            else
+                data  = setfield(data,pnames{i},pdata);
+            end
         end
         
         meta.x_.format    = 'csv';
