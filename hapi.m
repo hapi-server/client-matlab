@@ -94,6 +94,7 @@ DOPTS.cache_mlbin   = 1; % Save data requested in MATLAB binary for off-line use
 DOPTS.cache_hapi    = 1; % Save responses in files (HAPI CSV, JSON, and Binary) for debugging.
 DOPTS.use_cache     = 0; % Use cached MATLAB binary file associated with request if found.
 DOPTS.format        = 'csv'; % If 'csv', request for HAPI CSV will be made even if server supports HAPI Binary. (For debugging.) 
+%DOPTS.format        = 'binary';
 
 DOPTS.serverlist    = 'https://raw.githubusercontent.com/hapi-server/servers/master/all.txt';
 DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m';
@@ -102,6 +103,8 @@ DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/client-matl
 %DOPTS.hapi_data     = './hapi-data'; % Where to store cached data.
 %DOPTS.split_long    = 0; % Split long requests into chunks and fetch chunks.
 %DOPTS.parallel_req  = 0; % Use parallel requests for chunks.
+
+debug = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -236,13 +239,11 @@ if (nin == 3 || nin == 5)
                             regexprep(STOP,'-|:|\.|Z',''));
             fnamecsv  = [urld,filesep(),fname,'.csv'];
             fnamebin  = [urld,filesep(),fname,'.bin'];
-            fnamefbin = [urld,filesep(),fname,'.fbin'];
             fnamemat  = [urld,filesep(),fname,'.mat'];
             urlcsv  = [SERVER,'/data?id=',DATASET,'&time.min=',START,'&time.max=',STOP];
             if (length(PARAMETERS) > 0) % Not all parameters wanted
                 urlcsv = [urlcsv,'&parameters=',PARAMETERS];
             end
-            urlfbin = [urlcsv,'&format=fbinary'];
             urlbin  = [urlcsv,'&format=binary'];
         end
         urljson = [SERVER,'/info?id=',DATASET];
@@ -341,12 +342,12 @@ if (nin == 3 || nin == 5)
     
     if ~strcmp(DOPTS.format,'csv') && binaryavailable
         % Binary read.
-        if (DOPTS.logging) fprintf('Downloading %s ... ',urlfbin);end
+        if (DOPTS.logging) fprintf('Downloading %s ... ',urlbin);end
         % Fastest method based on tests in format_compare.m
-        urlwrite(urlfbin,fnamefbin);
+        urlwrite(urlbin,fnamebin);
         if (DOPTS.logging) fprintf('Done.\n');end
-        if (DOPTS.logging) fprintf('Reading %s ... ',fnamefbin);end
-        fid = fopen(fnamefbin);
+        if (DOPTS.logging) fprintf('Reading %s ... ',fnamebin);end
+        fid = fopen(fnamebin);
         p = char(fread(fid,21,'uint8=>char'));
         n = str2num(p(1));
         data = fread(fid,'double'); 
@@ -358,7 +359,7 @@ if (nin == 3 || nin == 5)
         data(:,1) = datenum(zerotime,'yyyy-mm-ddTHH:MM:SS') + data(:,1)/(86400*10^(3*n));
 
         if ~DOPTS.cache_hapi
-            rmfile(fnamefbin);
+            rmfile(fnamebin);
         end
         
         % Should use _x instead of x_, but _x is not an allowed field name.
@@ -397,6 +398,7 @@ if (nin == 3 || nin == 5)
         ntc     = length(findstr('d',twformat));
         lcol(1) = ntc; % Last time column.
 
+ 
         for i = 2:length(meta.parameters) % parameters{1} is always Time
             pnames{i-1} = meta.parameters{i}.name;
             ptypes{i-1} = meta.parameters{i}.type;
@@ -417,32 +419,20 @@ if (nin == 3 || nin == 5)
             end
             if any(strcmp(ptypes{i-1},{'isotime','string'}))
                 plengths{i-1}  = meta.parameters{i}.length;
-                rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c'],1,prod(psizes{i-1}))];
+                rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c '],1,prod(psizes{i-1}))];
+                %rformat = [rformat,repmat(['%s'],1,prod(psizes{i-1}))];
             end
         end
+        
         if (DOPTS.logging) fprintf('Parsing %s ... ',fnamecsv);end
+        if debug
+            fprintf(' using textscan() with format string %s ',rformat);
+        end
         fid = fopen(fnamecsv,'r');
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
         if isempty(A{end}) % Catches case when rformat is wrong.
             error(sprintf('\nError in CSV read of %f\n',fnamecsv));
-        end
-
-        % Check for correct number of commas. Remove in production.
-        % TODO: Use ReturnOnError option of TEXTSCAN.
-        [s,r] = system(sprintf('wc %s | tr -s [:blank:] | cut -d" " -f2',fnamecsv));
-        if (0 && s == 0) % TODO: Only works on OS-X and Linux
-            % Check A to make sure it has same number of rows
-            % as number of rows in file. See hapi_test for example
-            % when this error is caught.  Much faster than using
-            % native MATLAB function.  Remove for production.
-            nrows = str2num(r);
-            for i = 1:length(A)
-                nread = size(A{i},1);
-                if nread ~= nrows
-                    error(sprintf('\nNumber of rows read (%d) does not match number of rows in\n%s (%d).\nPlease report this issue at https://github.com/hapi-server/client-matlab/issues',fnamecsv,nread,nrows));
-                end
-            end
         end
 
         DTVec = transpose(cat(2,A{1:ntc})); 
