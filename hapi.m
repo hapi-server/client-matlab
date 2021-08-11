@@ -103,8 +103,6 @@ DOPTS.scripturl     = 'https://raw.githubusercontent.com/hapi-server/client-matl
 %DOPTS.hapi_data     = './hapi-data'; % Where to store cached data.
 %DOPTS.split_long    = 0; % Split long requests into chunks and fetch chunks.
 %DOPTS.parallel_req  = 0; % Use parallel requests for chunks.
-
-debug = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -341,30 +339,23 @@ if (nin == 3 || nin == 5)
     end
     
     if ~strcmp(DOPTS.format,'csv') && binaryavailable
+        error('Binary read not implemented');
         % Binary read.
         if (DOPTS.logging) fprintf('Downloading %s ... ',urlbin);end
         % Fastest method based on tests in format_compare.m
         urlwrite(urlbin,fnamebin);
         if (DOPTS.logging) fprintf('Done.\n');end
         if (DOPTS.logging) fprintf('Reading %s ... ',fnamebin);end
-        fid = fopen(fnamebin);
-        p = char(fread(fid,21,'uint8=>char'));
-        n = str2num(p(1));
-        data = fread(fid,'double'); 
-        fclose(fid);
-        if (DOPTS.logging) fprintf('Done.\n');end
-        psize = 1 + meta.parameters{2}.size;
-        data = reshape(data,psize,length(data)/psize)';
-        zerotime = p(2:end)';
-        data(:,1) = datenum(zerotime,'yyyy-mm-ddTHH:MM:SS') + data(:,1)/(86400*10^(3*n));
 
+        % See misc/binary.m for start of code to do binary read.
+        
         if ~DOPTS.cache_hapi
             rmfile(fnamebin);
         end
         
         % Should use _x instead of x_, but _x is not an allowed field name.
         % Extra info needed later.
-        meta.x_.format    = 'csv';
+        meta.x_.format    = 'binary';
         meta.x_.url       = urlbin;
         meta.x_.cachefile = fnamebin;
     else
@@ -398,7 +389,6 @@ if (nin == 3 || nin == 5)
         ntc     = length(findstr('d',twformat));
         lcol(1) = ntc; % Last time column.
 
- 
         for i = 2:length(meta.parameters) % parameters{1} is always Time
             pnames{i-1} = meta.parameters{i}.name;
             ptypes{i-1} = meta.parameters{i}.type;
@@ -406,7 +396,7 @@ if (nin == 3 || nin == 5)
             if isfield(meta.parameters{i},'size')
                 psizes{i-1} = meta.parameters{i}.size;
             end
-            if i == 2,a = ntc;,else,a = lcol(i-2);,end
+            if i == 2,a = ntc;else,a = lcol(i-2);end
             fcol(i-1) = a + 1; % First column of parameter
             lcol(i-1) = fcol(i-1)+prod(psizes{i-1})-1; % Last column of parameter
 
@@ -417,16 +407,21 @@ if (nin == 3 || nin == 5)
             if strcmp(ptypes{i-1},'double') || strcmp(ptypes{i-1},'float')
                 rformat = [rformat,repmat('%f ',1,prod(psizes{i-1}))];
             end
-            if any(strcmp(ptypes{i-1},{'isotime','string'}))
+            if any(strcmp(ptypes{i-1},'isotime'))
                 plengths{i-1}  = meta.parameters{i}.length;
                 rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c '],1,prod(psizes{i-1}))];
+            end
+            if any(strcmp(ptypes{i-1},'string'))
+                plengths{i-1}  = meta.parameters{i}.length;
+                rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c '],1,prod(psizes{i-1}))];
+                % Use this for Unicode.
                 %rformat = [rformat,repmat(['%s'],1,prod(psizes{i-1}))];
             end
         end
         
-        if (DOPTS.logging) fprintf('Parsing %s ... ',fnamecsv);end
-        if debug
-            fprintf(' using textscan() with format string %s ',rformat);
+        if (DOPTS.logging)
+            fprintf('Parsing %s',fnamecsv);
+            fprintf(' using textscan() with format string "%s" ... ',rformat);
         end
         fid = fopen(fnamecsv,'r');
         A = textscan(fid,rformat,'Delimiter',',');
@@ -483,7 +478,7 @@ if (nin == 3 || nin == 5)
     % Save extra metadata about request in MATLAB binary file
     % (_x is more consistent with HAPI spec, but not allowed as field
     % name.)
-    meta.x_ = struct();
+    %meta.x_ = struct();
     meta.x_.server     = SERVER;
     meta.x_.dataset    = DATASET;
     meta.x_.parameters = PARAMETERS;
