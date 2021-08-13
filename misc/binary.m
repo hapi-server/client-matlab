@@ -1,3 +1,5 @@
+% Draft code for binary read in hapi.m
+
 server     = 'http://hapi-server.org/servers/TestData2.0/hapi';
 dataset    = 'dataset1';
 parameters = 'scalar';

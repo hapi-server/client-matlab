@@ -280,35 +280,7 @@ if (nin == 3 || nin == 5)
         error(err.message);
         return
     end
-    
-    % Catch case where server returns metadata for all parameters
-    % instead of just the ones requested and then correct meta.parameters.
-    % Remove when that server is fixed (voyager.gsfc.nasa.gov/hapiproto).
-    timename = meta.parameters{1}.name;
-    if length(PARAMETERS) > 0 % PARAMETERS='' not given
-        wanted = strsplit(PARAMETERS,',');
-        k = 1;
-        for i = 1:length(meta.parameters)
-            given{i} = meta.parameters{i}.name;
-            if any(strcmp(given{i},wanted)) || strcmp(given{i},timename)
-                newlist{k} = meta.parameters{i};
-                k = k+1;
-            end
-        end
-        meta.parameters = newlist;
-        if strcmp(wanted,timename)
-            if length(newlist) ~= length(wanted)
-                fprintf('\n');
-                warning('Server returned too many parameters in /info request');
-            end
-        else
-            if length(newlist) ~= length(wanted)+1
-                fprintf('\n');
-                warning('Server returned too many parameters in /info request');
-            end
-        end
-    end
-    
+        
     if (DOPTS.logging) fprintf('Done.\n');end
     if (nin == 3) % Only metadata wanted.  Return it.
         data = meta;
@@ -413,9 +385,9 @@ if (nin == 3 || nin == 5)
             end
             if any(strcmp(ptypes{i-1},'string'))
                 plengths{i-1}  = meta.parameters{i}.length;
-                rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c '],1,prod(psizes{i-1}))];
+                %rformat = [rformat,repmat(['%',num2str(plengths{i-1}),'c '],1,prod(psizes{i-1}))];
                 % Use this for Unicode.
-                %rformat = [rformat,repmat(['%s'],1,prod(psizes{i-1}))];
+                rformat = [rformat,repmat(['%q'],1,prod(psizes{i-1}))];
             end
         end
         
@@ -423,7 +395,7 @@ if (nin == 3 || nin == 5)
             fprintf('Parsing %s',fnamecsv);
             fprintf(' using textscan() with format string "%s" ... ',rformat);
         end
-        fid = fopen(fnamecsv,'r');
+        fid = fopen(fnamecsv,'r','n','UTF-8');
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
         if isempty(A{end}) % Catches case when rformat is wrong.
@@ -459,6 +431,7 @@ if (nin == 3 || nin == 5)
             pdata = reshape(pdata,[size(pdata,1),psizes{i}(:)']);
             if ~isvarname(pnames{i})
                 newname = sprintf('x_parameter%d',i);
+                fprintf('\n');
                 warning(sprintf('Parameter name ''%s'' is not a valid field name. Using ''%s'' and setting meta.parameters{%d}.name_matlab = %s',pnames{i},newname,i,pnames{i}));
                 data  = setfield(data,newname,pdata);
                 meta.parameters{i+1}.name_matlab = newname;
