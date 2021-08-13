@@ -39,6 +39,10 @@ TODO:
 1. Generalize time parsing in `hapi.m`.
 2. Finish binary reader.
 
+## Notes
+
+The HAPI specification allows dataset and parameter strings to be Unicode encoded as UTF-8. Prior to MATLAB 2021a, `.m` files with UTF-8 were not supported. See [unicode.m](https://github.com/hapi-server/client-matlab/blob/master/misc/unicode.m) for a work-around.
+
 ## Contact
 
 Submit bug reports and feature requests on the [repository issue tracker](https://github.com/hapi-server/client-matlab/issues).
