@@ -350,17 +350,41 @@ if (nin == 3 || nin == 5)
             if (DOPTS.logging) fprintf('Done.\n');end
         end
 
-        % Ifc = index of first comma.
-        % Assumes time stamps + whitespace <= 40 characters.
-        Ifc = findstr(str(1:min(40,length(str))),',');
-        t1 = deblank(str(1:Ifc-1));
+        if ~iscell(meta.parameters)
+            % If only time variable, meta.parameters is read by webread()
+            % as a struct instead of cell of structs.
+            meta.parameters = {meta.parameters};
+        end
 
+        if 0
+            % Not needed b/c length should be given in metadata.
+            % TODO: Use a fallback if length is wrong.
+            % Ifc = index of first comma.
+            % Assumes time stamps + whitespace <= 40 characters.
+            substr = str(1:min(40,length(str)));
+            Ifc = findstr(substr,',');
+            if isempty(Ifc)
+                Ifc = regexp(substr,'\r\n','once');
+                if isempty(Ifc)
+                    Ifc = regexp(substr,'\n','once');
+                end
+            end
+            if isempty(Ifc)
+                % File contains only a single timestamp.
+                t1 = deblank(str);
+            else
+                t1 = deblank(str(1:Ifc-1));
+            end
+        end
+
+        t1 = str(1:meta.parameters{1}.length);
         [rformat,twformat,na] = timeformat(t1);
 
-        % Number of time columns that will bre created using twformat read.
+        % Number of time columns that will be created using twformat read.
         ntc     = length(findstr('d',twformat));
         lcol(1) = ntc; % Last time column.
 
+        pnames = {};
         for i = 2:length(meta.parameters) % parameters{1} is always Time
             pnames{i-1} = meta.parameters{i}.name;
             ptypes{i-1} = meta.parameters{i}.type;
@@ -395,6 +419,7 @@ if (nin == 3 || nin == 5)
             fprintf('Parsing %s',fnamecsv);
             fprintf(' using textscan() with format string "%s" ... ',rformat);
         end
+
         fid = fopen(fnamecsv,'r','n','UTF-8');
         A = textscan(fid,rformat,'Delimiter',',');
         fclose(fid);
@@ -407,7 +432,7 @@ if (nin == 3 || nin == 5)
         % or Yr,Doy,Hr,Mn,Sc,Ms,....
         
         % Return exact time strings as found in CSV. Should this even be
-        % returned?  Probably won't be used. Doubles the parsing time.
+        % returned? Probably won't be used. Doubles the parsing time.
         timelen = length(t1);
         Time = sprintf(twformat,DTVec(:)); % datestr() is more straightforward, but is very slow.
         if mod(length(Time),timelen) ~= 0
@@ -420,7 +445,12 @@ if (nin == 3 || nin == 5)
         % 4-5 decimal places in t1), etc.
         DTVec = normalizeDTVec(DTVec,t1,na);
 
-        data = struct('Time',Time,'DateTimeVector',DTVec');
+        timename = meta.parameters{1}.name;
+        if ~isvarname(timename)
+            timename = 'Time';
+        end
+        data = struct(timename,Time,'DateTimeVector',DTVec');
+
         for i = 1:length(pnames)
             if any(strcmp(ptypes{i},{'isotime','string'}))
                 % Array parameter of type isotime or string
@@ -428,13 +458,19 @@ if (nin == 3 || nin == 5)
             else
                 pdata = cat(2,A{fcol(i):lcol(i)});
             end
-            pdata = reshape(pdata,[size(pdata,1),psizes{i}(:)']);
+            size0 = [size(pdata,1),psizes{i}'];
+            pdata = reshape(pdata,[size0(1),fliplr(size0(2:end))]);
+            if length(psizes{i}) > 1
+                idxp = [1,length(psizes{i})+1:-1:2];
+                pdata = permute(pdata,idxp);
+            end
             if ~isvarname(pnames{i})
                 newname = sprintf('x_parameter%d',i);
                 fprintf('\n');
                 warning(sprintf('Parameter name ''%s'' is not a valid field name. Using ''%s'' and setting meta.parameters{%d}.name_matlab = %s',pnames{i},newname,i,pnames{i}));
                 data  = setfield(data,newname,pdata);
                 meta.parameters{i+1}.name_matlab = newname;
+                meta.parameters{i+1}.name_unicode = newname;
             else
                 data  = setfield(data,pnames{i},pdata);
             end
