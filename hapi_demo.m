@@ -1,13 +1,13 @@
 %% Set-up
 % Download hapi.m if not found.
-if exist('hapi','file') ~= 2
+if exist('hapi.m','file') ~= 2
     u = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi.m';
     urlwrite(u,'hapi.m');
 end
 % Download hapi_plot.m if not found.
-if exist('hapi','file') ~= 2
-    u = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapi_plot.m';
-    urlwrite(u,'hapi_plot.m');
+if exist('hapiplot.m','file') ~= 2
+    u = 'https://raw.githubusercontent.com/hapi-server/client-matlab/master/hapiplot.m';
+    urlwrite(u,'hapiplot.m');
 end
 % Many figures generated, so dock all of them
 set(0,'DefaultFigureWindowStyle','docked')
@@ -365,27 +365,6 @@ hapiplot(data,meta)
 % or
 % hapiplot(data,meta,'spectranobins')
 
-%% Test Data: All parameters
-% If parameters='', HAPI() get all parameters in the dataset and HAPIPLOT
-% creates (one or more, as needed) plots for each individually. This demo
-% works, but is suppressed.
-if (0)
-    server     = 'http://hapi-server.org/servers/TestData2.0/hapi';
-    dataset    = 'dataset1';
-    parameters = '';
-    start      = '1970-01-01';
-    stop       = '1970-01-01T00:01:00';
-    opts       = struct('logging',1);
-
-    [data,meta] = hapi(server, dataset, parameters, start, stop, opts);
-
-    data
-    meta
-    fprintf('meta.parameters = ');
-    meta.parameters{:}
-
-    hapiplot(data,meta)
-end
 
 %% Request list of known HAPI servers
 % 
