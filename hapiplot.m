@@ -35,9 +35,9 @@ end
 np = length(meta.parameters) - 1;
 if ~exist('pn','var') 
     for i = 1:np
-        if ~any(strcmp(meta.parameters{i+1}.type,{'string','isotime'})) %% && isfield(meta.parameters{i+1},'size'))
+        if ~any(strcmp(meta.parameters{i+1}.type,{'string','isotime'}))
             % Doubles or integers that are stored as matrices.
-            if ~isfield(meta.parameters{i+1},'size');
+            if ~isfield(meta.parameters{i+1},'size')
                 meta.parameters{i+1}.size = [1];
             end
             psize = meta.parameters{i+1}.size;
@@ -53,9 +53,24 @@ if ~exist('pn','var')
                 % Loop over 2nd dimension.
                 for j = 1:psize(1)
                     tmp   = getfield(data,pname);
-                    datar = setfield(data,pname,squeeze(tmp(:,j,:))); 
-                    metar = setfield(meta,'size',psize(1));
-                    metar.parameters{i+1}.label = sprintf('%s(:,%d,:)',pname,j);
+                    datar = setfield(data,pname,squeeze(tmp(:,j,:)));
+                    metar = meta;
+                    metar.parameters{i+1}.size = psize(2);
+                    if isfield(metar.parameters{i+1},'bins')
+                        metar.parameters{i+1}.bins = meta.parameters{i+1}.bins(2);
+                    end
+                    if isfield(metar.parameters{i+1},'units')
+                        if iscell(meta.parameters{i+1}.units)
+                            metar.parameters{i+1}.units = meta.parameters{i+1}.units{j};
+                        else
+                            metar.parameters{i+1}.units = meta.parameters{i+1}.units;
+                        end
+                    end
+                    if isfield(metar.parameters{i+1},'label')% && iscell(metar.parameters{i+1}.label)
+                        metar.parameters{i+1}.label = meta.parameters{i+1}.label{j};
+                    end
+                    metar.parameters{i+1}.label_alt = sprintf('%s(%d,:)',pname,j);
+                    %metar.parameters{i+1}.label = sprintf('%s(%d,:)',pname,j);
                     hapiplot(datar,metar,i);
                 end
             end
@@ -66,13 +81,13 @@ if ~exist('pn','var')
             comps = getfield(data,name); % comps is a cell array
             datar = data;
             metar = meta;
-            if ~isfield(meta.parameters{i+1},'size');
+            if ~isfield(meta.parameters{i+1},'size')
                 metar.parameters{i+1}.size = [1];
             end
             for j = 1:length(comps)
                 datar = setfield(datar,name,comps{j}); % Reduced data is a matrix of strings.
                 % Create a field "label" that identifies component.
-                metar.parameters{i+1}.label = sprintf('%s(:,%d)',name,j);
+                metar.parameters{i+1}.label_alt = sprintf('%s(:,%d)',name,j);
                 % Plot each component separately and pass component string
                 % for file name.
                 hapiplot(datar,metar,i);
@@ -85,12 +100,13 @@ if ~exist('pn','var')
 end
 
 pname = meta.parameters{pn+1}.name;  % Parameter name
-if isfield(meta.parameters{pn+1},'label')
+if isfield(meta.parameters{pn+1},'label_alt') %&& ~iscell(meta.parameters{pn+1}.label)
     % Parameter name for string or isotime arrays
-    label = meta.parameters{pn+1}.label;
+    label = meta.parameters{pn+1}.label_alt;
 else
     label = pname;
 end
+
 
 % Output file name.
 fname = sprintf('%s_%s_%s_%s',...
@@ -99,13 +115,19 @@ fname = sprintf('%s_%s_%s_%s',...
                 regexprep(meta.x_.time_min,'-|:\.|Z',''),...
                 regexprep(meta.x_.time_max,'-|:|\.|Z',''));
 
-% Compute fractional day number using datenum() (1 = Jan-1-0000).
-time = datenum(double(data.DateTimeVector(:,1:6))); 
-if size(data.DateTimeVector,2) == 7
+s = size(data.DateTimeVector,2);
+if s == 3
+    time = datenum(double(data.DateTimeVector(:,1:s)));
+end
+if s >= 6
+    time = datenum(double(data.DateTimeVector(:,1:6)));
+end
+if s == 7
+    % Compute fractional day number using datenum() (1 = Jan-1-0000).
     % Add in milliseconds to time.
     time = time + double(data.DateTimeVector(:,7))/(86400*1000);
 end
-if size(data.DateTimeVector,2) > 7 && any(data.DateTimeVector(:,8:end))
+if s > 7 && any(data.DateTimeVector(:,8:end))
     % datetick function uses datenum function values, which are only 
     % relevant to 1 ms.  To plot with correct time axis labels, would
     % need to write custom datetick function.
@@ -168,8 +190,10 @@ end
 th = title(tstr);
 % Interpreter = none: Don't interpret underscore in name as subscript
 set(th,'Interpreter','none','FontWeight','normal');
+if ~isfield(meta.parameters{pn+1},'bins') ...
+    && meta.parameters{pn+1}.size(1) < 10 ...
+    || iscell(punits)
 
-if ~isfield(meta.parameters{pn+1},'bins') && meta.parameters{pn+1}.size(1) < 10
     % Plot parameter as one or more time series
 
     ptype = meta.parameters{pn+1}.type;
@@ -177,10 +201,10 @@ if ~isfield(meta.parameters{pn+1},'bins') && meta.parameters{pn+1}.size(1) < 10
     if strcmp(ptype,'isotime')
         y = iso2mldn(y);
     end
-    
+        
     tight = 1;
     if strcmp(ptype,'string')
-        [ustrs,ia,ib] = unique(y,'rows');
+        [ustrs,ia,ib] = unique(cell2mat(y),'rows');
         y = ib;
         yt = [1:length(ia)];
         if (length(ia) > 10)
@@ -191,8 +215,13 @@ if ~isfield(meta.parameters{pn+1},'bins') && meta.parameters{pn+1}.size(1) < 10
                 tight = 0;
             end
         end
+        if length(ia) == 1
+            % Only 1 uniqe value
+            set(gca,'YLim',[1,2]);
+        else
+            set(gca,'YLim',[1,yt(end)]);
+        end
         set(gca,'YTick',yt);
-        set(gca,'YLim',[1,yt(end)]);
         set(gca,'YTickLabel',ustrs);
     end
     
@@ -219,29 +248,58 @@ if ~isfield(meta.parameters{pn+1},'bins') && meta.parameters{pn+1}.size(1) < 10
     % Auto label x-axis based on time value
     datetick('x');
     
-    if length(punits) > 0
-        yh = ylabel(sprintf('%s [%s]',label,punits));
+    yh = '';
+
+    % JSON for parameter with size = [3] can have
+    % units = ""                => punits = ""
+    % units = [""]              => punits = {{""}}
+    % units = "u1"              => punits = {"u1"}
+    % units = ["u1"]            => punits = 
+    % units = ["u1","u2","u3"]  => punits = {{"u1", "u2", "u3"}}
+    if ~isempty(punits)
+        punitstr = '';
+        if iscell(punits)
+            if length(punits{1}) == 1 && iscell(punits{1}) && ~isempty(punits{1}{1})
+                punitstr = sprintf(' [%s]',punits{1}{1});
+            end
+        else
+            punitstr = sprintf(' [%s]',punits);
+        end
+        yh = ylabel(sprintf('%s%s',label,punitstr));
     else
         yh = ylabel(label);
     end
+    set(yh,'Interpreter','none');
+    
     if strcmp(ptype,'isotime')
         datetick('y');
         if (y(end)-y(1) <= 1)
             yl = [get(get(gca,'YLabel'),'String'),' on ',datestr(y(1),'yyyy-mm-dd')];
             ylabel(yl);
         end
-    end    
-    set(yh,'Interpreter','none');
-
-    if strcmp(ptype,'string')
-        legend(meta.parameters{pn+1}.description);
     end
     
+    if strcmp(ptype,'string') && isfield(meta.parameters{pn+1},'description')
+        legend(meta.parameters{pn+1}.description);
+    end
+
+    plabels = {};
+    if isfield(meta.parameters{pn+1},'label')
+        plabels = meta.parameters{pn+1}.label;
+    end
     if size(y,2) > 1
         for i = 1:size(y,2)
-            legstr{i} = sprintf('Column %d',i);
+            compunit = '';
+            complabel = sprintf('Column %d',i);
+            if iscell(punits) && length(punits) > 1
+                compunit = sprintf(' [%s]',punits{i});
+            end
+            if iscell(plabels) && length(plabels) > 1
+                complabel = plabels{i};
+            end
+            legstr{i} = sprintf('%s%s',complabel,compunit);
         end
-        legend(legstr);
+        legend(legstr,'Interpreter','Latex');
     end
     grid on;
     if tight,axis tight;end
@@ -273,7 +331,6 @@ else
         binunits = '';
     end
 
-
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Determine if y scale should be log (not well tested).
     first_zero_or_negative = false;
@@ -302,7 +359,7 @@ else
         bincenters(1) = bincenters(2)/2;
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-
+        
     % Plot matrix as colored rectangles.
     p = pcolor(time',bincenters',y');
 
@@ -353,10 +410,11 @@ else
 end
 
 if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
+fname = replace(fname,'/','_');
 fnamepng = ['./hapi-figures/',fname,'.png'];
-fnamepdf = ['./hapi-figures/',fname,'.pdf'];
 print('-dpng',fnamepng);
 fprintf('hapiplot.m: Wrote %s\n',fnamepng);
+%fnamepdf = ['./hapi-figures/',fname,'.pdf'];
 %print('-dpdf',fnamepdf);
 %fprintf('hapiplot.m: Wrote %s\n',fnamepdf);
 
