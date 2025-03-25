@@ -35,6 +35,10 @@ end
 np = length(meta.parameters) - 1;
 if ~exist('pn','var') 
     for i = 1:np
+        name  = meta.parameters{i+1}.name;
+        if isfield(meta.parameters{i+1},'name_matlab')
+            name  = meta.parameters{i+1}.name_matlab;
+        end
         if ~any(strcmp(meta.parameters{i+1}.type,{'string','isotime'}))
             % Doubles or integers that are stored as matrices.
             if ~isfield(meta.parameters{i+1},'size')
@@ -44,7 +48,6 @@ if ~exist('pn','var')
             if length(psize) == 1 % Parameter is stored as 2-D matrix with rows of time
                 hapiplot(data,meta,i);
             else
-                pname = meta.parameters{i+1}.name;
                 if length(psize) > 2
                     % TODO: Generalize to handle more than 3-D?
                     warning(sprintf('\nParameter %s has more than 3 dimensions.  Plotting only first 3.',name));
@@ -52,8 +55,8 @@ if ~exist('pn','var')
                 % Parameter is stored as N-D matrix with rows of time.
                 % Loop over 2nd dimension.
                 for j = 1:psize(1)
-                    tmp   = getfield(data,pname);
-                    datar = setfield(data,pname,squeeze(tmp(:,j,:)));
+                    tmp   = getfield(data,name);
+                    datar = setfield(data,name,squeeze(tmp(:,j,:)));
                     metar = meta;
                     metar.parameters{i+1}.size = psize(2);
                     if isfield(metar.parameters{i+1},'bins')
@@ -69,7 +72,7 @@ if ~exist('pn','var')
                     if isfield(metar.parameters{i+1},'label')% && iscell(metar.parameters{i+1}.label)
                         metar.parameters{i+1}.label = meta.parameters{i+1}.label{j};
                     end
-                    metar.parameters{i+1}.label_alt = sprintf('%s(%d,:)',pname,j);
+                    metar.parameters{i+1}.label_alt = sprintf('%s(%d,:)',meta.parameters{i+1}.name,j);
                     %metar.parameters{i+1}.label = sprintf('%s(%d,:)',pname,j);
                     hapiplot(datar,metar,i);
                 end
@@ -77,7 +80,6 @@ if ~exist('pn','var')
         else
             % A 2-D string or isotime parameter
             % (e.g., a time series that is a vector of strings).
-            name  = meta.parameters{i+1}.name;
             comps = getfield(data,name); % comps is a cell array
             datar = data;
             metar = meta;
@@ -87,16 +89,15 @@ if ~exist('pn','var')
             for j = 1:length(comps)
                 datar = setfield(datar,name,comps{j}); % Reduced data is a matrix of strings.
                 % Create a field "label" that identifies component.
-                metar.parameters{i+1}.label_alt = sprintf('%s(:,%d)',name,j);
+                metar.parameters{i+1}.label_alt = sprintf('%s(:,%d)',meta.parameters{i+1}.name,j);
                 % Plot each component separately and pass component string
                 % for file name.
                 hapiplot(datar,metar,i);
             end    
         end
-        % MATLAB passes by value, so delete data after passed.
-        rmfield(data,meta.parameters{i}.name);
+        rmfield(data,name);
     end
-    return;
+    return
 end
 
 pname = meta.parameters{pn+1}.name;  % Parameter name
@@ -107,21 +108,29 @@ else
     label = pname;
 end
 
-
 % Output file name.
 fname = sprintf('%s_%s_%s_%s',...
                 meta.x_.dataset,...
                 label,...
-                regexprep(meta.x_.time_min,'-|:\.|Z',''),...
+                regexprep(meta.x_.time_min,'-|:|\.|Z',''),...
                 regexprep(meta.x_.time_max,'-|:|\.|Z',''));
 
-s = size(data.DateTimeVector,2);
-if s == 3
-    time = datenum(double(data.DateTimeVector(:,1:s)));
+nt = size(data.DateTimeVector,1);
+DateTimeVector = double(data.DateTimeVector);
+s = size(DateTimeVector,2);
+if  s == 1
+    DateTimeVector = [DateTimeVector, ones([nt, 2])];
 end
-if s >= 6
-    time = datenum(double(data.DateTimeVector(:,1:6)));
+if s == 2
+    DateTimeVector = [DateTimeVector, ones([nt, 1])];
 end
+if s == 4
+    DateTimeVector = [DateTimeVector, zeros([nt, 2])];    
+end
+if s == 5
+    DateTimeVector = [DateTimeVector, zeros([nt, 1])];    
+end
+time = datenum(DateTimeVector(:,1:6));
 if s == 7
     % Compute fractional day number using datenum() (1 = Jan-1-0000).
     % Add in milliseconds to time.
@@ -132,6 +141,10 @@ if s > 7 && any(data.DateTimeVector(:,8:end))
     % relevant to 1 ms.  To plot with correct time axis labels, would
     % need to write custom datetick function.
     warning('Time resolution is less than 1 ms. Time axis labels will not be correct at this time scale.');
+end
+
+if isfield(meta.parameters{pn+1},'name_matlab')
+    pname  = meta.parameters{pn+1}.name_matlab;
 end
 
 y = getfield(data,pname); % Data to plot
@@ -307,28 +320,30 @@ if ~isfield(meta.parameters{pn+1},'bins') ...
 else
     % Plot parameter as spectrogram
 
+    binname = 'Column #';
+    bincenters = [1:meta.parameters{pn+1}.size(1)];
+    binunits = '';
+
     if isfield(meta.parameters{pn+1},'bins')
-        binname = meta.parameters{pn+1}.bins.name;
+        if isfield(meta.parameters{pn+1}.bins,'centers')
+            if ischar(meta.parameters{pn+1}.bins.centers)
+                warning('Parameter has time dependent bin centers given by variable %s. These are not handled by hapiplot.\n',...
+                        meta.parameters{pn+1}.bins.centers);
+            else
+                binname = meta.parameters{pn+1}.bins.name;
+                bincenters  = meta.parameters{pn+1}.bins.centers;
+                if isfield(meta.parameters{pn+1}.bins,'units')
+                    binunits = meta.parameters{pn+1}.bins.units;
+                end
+            end
+        end
         if isfield(meta.parameters{pn+1}.bins,'ranges')
             binranges  = meta.parameters{pn+1}.bins.ranges;
-            warning('Parameter has bin ranges, but hapi_plot will not use them.');
-        end
-        if isfield(meta.parameters{pn+1}.bins,'centers')
-            bincenters  = meta.parameters{pn+1}.bins.centers;
+            warning('Parameter has bin ranges, but hapiplot does not use them.');
         end
         if exist('binranges','var') && ~exist('bincenters','var')
-            warning('Parameter has bin ranges, but hapi_plot will use average as center location of ranges for bin.\n');        
+            %warning('Parameter has bin ranges and no bincentersl hapiplot will center of range as center of bin.\n');
         end
-
-        if isfield(meta.parameters{pn+1}.bins,'units')
-            binunits = meta.parameters{pn+1}.bins.units;
-        else
-            binunits = '';
-        end
-    else
-        binname = 'Column';
-        bincenters = [1:meta.parameters{pn+1}.size(1)];
-        binunits = '';
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -409,7 +424,9 @@ else
     end
 end
 
-if ~exist('hapi-figures','dir'),mkdir('hapi-figures');end
+if ~exist('hapi-figures','dir')
+    mkdir('hapi-figures');
+end
 fname = replace(fname,'/','_');
 fnamepng = ['./hapi-figures/',fname,'.png'];
 print('-dpng',fnamepng);

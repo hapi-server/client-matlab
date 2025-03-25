@@ -69,7 +69,6 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %     OPTS.use_cache    = 0;
 %     HAPI(...,OPTS)
 %
-%   Version 2017-06-18.
 %
 %   For bug reports and feature requests, see
 %   <a href="https://github.com/hapi-server/client-matlab/issues">https://github.com/hapi-server/client-matlab/issues</a>
@@ -231,7 +230,7 @@ if (nin == 3 || nin == 5)
             fname = sprintf('%s_%s_%s_%s',...
                             regexprep(DATASET,'/|:','_'),...
                             regexprep(PARAMETERS,',','-'),...
-                            regexprep(START,'-|:\.|Z',''),...
+                            regexprep(START,'-|:|\.|Z',''),...
                             regexprep(STOP,'-|:|\.|Z',''));
             fnamecsv  = [urld,filesep(),fname,'.csv'];
             fnamebin  = [urld,filesep(),fname,'.bin'];
@@ -334,9 +333,11 @@ if (nin == 3 || nin == 5)
             % Save to file and read file
             if (DOPTS.logging) fprintf('Downloading %s ... ',urlcsv);end
             %urlwrite(urlcsv,fnamecsv);
-            websave(fnamecsv,urlcsv);
+            opts = weboptions('CharacterEncoding','UTF-8');
+            websave(fnamecsv,urlcsv,opts);
             if (DOPTS.logging) fprintf('Done.\n');end
             if (DOPTS.logging) fprintf('Reading %s ... ',fnamecsv);end
+            %fid = fopen(fnamecsv,'r', 'l', 'UTF-8');
             fid = fopen(fnamecsv,'r');
             str = fscanf(fid,'%c');
             fclose(fid);
@@ -419,7 +420,11 @@ if (nin == 3 || nin == 5)
         end
 
         fid = fopen(fnamecsv,'r','n','UTF-8');
-        A = textscan(fid,rformat,'Delimiter',',');
+        % textscan() replaces unknown Unicode characters with empty string.
+        % For example, the thumbs up character in TestData3.1/unicodevector
+        % and TestData3.1/unicodevector-4-byte. One cannot determine if
+        % actual value was empty string or MATLAB did a replacement.
+        A = textscan(fid,rformat,'Delimiter',',');        
         fclose(fid);
         if isempty(A{end}) % Catches case when rformat is wrong.
             error(sprintf('\nError in CSV read of %f\n',fnamecsv));
@@ -466,11 +471,11 @@ if (nin == 3 || nin == 5)
                 newname = sprintf('x_parameter%d',i);
                 fprintf('\n');
                 warning(sprintf('Parameter name ''%s'' is not a valid field name. Using ''%s'' and setting meta.parameters{%d}.name_matlab = %s',pnames{i},newname,i,pnames{i}));
-                data  = setfield(data,newname,pdata);
+                data = setfield(data,newname,pdata);
                 meta.parameters{i+1}.name_matlab = newname;
                 meta.parameters{i+1}.name_unicode = newname;
             else
-                data  = setfield(data,pnames{i},pdata);
+                data = setfield(data,pnames{i},pdata);
             end
         end
         
