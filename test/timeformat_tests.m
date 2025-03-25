@@ -104,7 +104,7 @@ for i = 1:length(instr)
     end
     t1  = deblank(instr{i}(1:Ifc-1));
 
-    [rformat,twformat,timelen,na] = timeformat(t1);
+    [rformat,twformat,na] = timeformat(t1);
 
     A = textscan(instr{i},[rformat,' %d'],'Delimiter',',');
 

@@ -1,7 +1,7 @@
 function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 % HAPI - Interface to Heliophysics Data Environment API
 %
-%   HAPI.m gets metadata and data from a <a href="https://github.com/hapi-server/">HAPI v1.1</a> compliant
+%   HAPI.m gets metadata and data from a <a href="https://github.com/hapi-server/">HAPI</a> compliant
 %   data server. See <a href="./html/hapi_demo.html">hapi_demo</a> for usage examples.
 %
 %   This is a command-line only interface.  For a GUI for browsing and
@@ -9,8 +9,6 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   Select a catalog, dataset, parameter, and time range and then request a
 %   MATLAB script as an output.  A script including a call to this script
 %   will be generated that can be pasted onto the command line.
-%
-%   <a href="http://tsds.org/get/#catalog=SSCWeb&dataset=ace&parameters=X_TOD&start=-P2D&stop=2017-08-27&return=script&format=matlab">Example of search result</a>.
 %
 %   Servers = HAPI() or HAPI() returns a cell array of URL strings
 %   or lists data server URLs from <a href="https://github.com/hapi-server/servers/servers.json">known HAPI servers</a>.
@@ -51,7 +49,7 @@ function [data, meta] = hapi(SERVER, DATASET, PARAMETERS, START, STOP, OPTS)
 %   DATENUM is only accurate to 1 ms resolution, so that
 %
 %    datenum(Data.DateTimeVec(:,1:6)) ...
-%      + Data.DateTimeVec(:,7)/86400 ..
+%      + Data.DateTimeVec(:,7)/86400 ...
 %      + Data.DateTimeVec(:,8)/86400000
 %
 %   is not meaningful.
@@ -523,7 +521,7 @@ function DTVec = normalizeDTVec(DTVec,t1,na)
         DTVec = [DTVec,ones(size(DTVec,1),3-size(DTVec,2))];
     end
     if size(DTVec,2) > 3 && size(DTVec,2) < 6
-        DTVec = [DTVec,ones(size(DTVec,1),3-size(DTVec,2))];
+        DTVec = [DTVec,zeros(size(DTVec,1),6-size(DTVec,2))];
     end
     DTVec = DTVec';
     
