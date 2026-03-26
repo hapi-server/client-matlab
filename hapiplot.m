@@ -210,13 +210,21 @@ if ~isfield(meta.parameters{pn+1},'bins') ...
     % Plot parameter as one or more time series
 
     ptype = meta.parameters{pn+1}.type;
-    
+
     if strcmp(ptype,'isotime')
         y = iso2mldn(y);
     end
-        
+
+
     tight = 1;
     if strcmp(ptype,'string')
+        n = meta.parameters{pn+1}.length;
+        blank = repmat(' ', 1, n);
+        for i = 1:length(y)
+            if isempty(y{i})
+                y{i} = blank;
+            end
+        end
         [ustrs,ia,ib] = unique(cell2mat(y),'rows');
         y = ib;
         yt = [1:length(ia)];
@@ -255,7 +263,7 @@ if ~isfield(meta.parameters{pn+1},'bins') ...
     else
         props = {};
     end
-    
+
     ph = plot(time,y,props{:});
     
     % Auto label x-axis based on time value
