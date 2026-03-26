@@ -424,7 +424,7 @@ if (nin == 3 || nin == 5)
         % For example, the thumbs up character in TestData3.1/unicodevector
         % and TestData3.1/unicodevector-4-byte. One cannot determine if
         % actual value was empty string or MATLAB did a replacement.
-        A = textscan(fid,rformat,'Delimiter',',');        
+        A = textscan(fid,rformat,'Delimiter',',','TreatAsEmpty',{'"NaN"', '"nan"'});
         fclose(fid);
         if isempty(A{end}) % Catches case when rformat is wrong.
             error(sprintf('\nError in CSV read of %f\n',fnamecsv));
